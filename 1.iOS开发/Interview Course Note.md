@@ -1050,13 +1050,29 @@ CFRunLoop {
 5. kCFRunLoopCommonModes: 这是一个占位的 Mode，没有实际作用。
 
 ##### AutoreleasePool
+App启动后, 苹果在主线程Runloop里注册了两个Observer, 回掉都是`_wrapRunLoopWithAutoreleasePoolHandler()`. 
 
+第一个Observer监视的事件是Entry(即将进入Loop), 其回掉会调用`_objc_autoreleasePoolPush()`创建自动释放池. 其order是-2147483647, 优先级最高, 保证创建释放池发生在其它回掉之前.
+
+第二个Observer监视两个事情:BeforeWaiting(准备进入休眠)时调用`_objc_autoreleasePoolPop()`和`_objc_autoreleasePoolPush()`, 释放旧的池并创建新的池; Exit(即将退出Loop)时调用`_objc_autoreleasePoolPop()`来释放自动释放池. 这个Observer的优先级最低, 保证释放池子发生在其它所有回掉之后. 
+
+在主线程执行代码, 通常是写在诸如事件回掉, Timer回掉内的. 这些回掉被Runloop创建好的AutoreleasePool环绕着, 所以不会出现内存泄露, 开发者也不必显式的创建Pool.
+
+**总结: 进入循环时候push自动释放池; 进入休眠的时候pop自动释放池; 退出的时候pop自动释放池; **
 
 ##### 事件响应
+苹果注册一个Source1用来接收系统事件. 当一个硬件事件(触摸,锁屏,摇晃)发生后, 首先IOKit收到后生成一个IOHIDEvent事件进行传递, 随后通过mach port转发给需要的App进程. 随后苹果注册的那个Source1就会触发回掉, 并通过`_UIApplicationHandleEventQueue()`进行应用内部的分发. `_UIApplicationHandleEventQueue()`进一步包装成UIEvent, 在应用内部进行分发. 
+
 
 ##### 手势识别
+当`_UIApplicationHandleEventQueue()`识别一个手势之后, 会将UIGestureRecognizer标记为待处理.
+
+苹果注册了一个Observer监听`BeforeWaiting`事件, 这个事件回掉是`_UIGestureRecognizerUpdateObserver()`, 其内部会获取所有刚被标记待处理的GestureRecongnizer, 并执行其对调. 
 
 ##### 界面更新
+当在操作UI时候, 比如改变Frame, 更新UIView/CALayer层次, 手动调用 setNeedsLayout/setNeedsDisplay时候, 这个UIView会被标记为待处理, 并被提交到一个全局容器中.
+
+**苹果注册一个Observer监听BeforeWaiting(即将进入休眠)和Exit(即将退出Loop)事件, 回掉执行一个函数去遍历所有待处理的UIView以执行实际的绘制和调整, 并更新UI界面. **
 
 ##### 定时器
 Timer其实就是CFRunloopTimerRef, 他们之间可以无缝转换. Timer注册到Runloop后, Runloop悔为其在重复的时间点注册好事件. 为了节省资源, Runloop并不会在非常精确的时间点调用Timer, Timer有个属性`tolerance`可以用来控制允许出现的误差.
@@ -1069,18 +1085,17 @@ CADisplayLink是一个和评估刷新率一致的定时器(内部原理更加复
 ##### 关于GCD
 当调用`dispatch_async(dispatch_get_main_queue(), block)`时, `libDispatch`会向主线程的Runloop发送消息, Runloop会被唤醒, 并从消息中取得这个block, 并在回掉中执行这个block. 这个逻辑仅限于dispatch到主线程, dispatch到其它线程仍然是libDispatch处理的.
 
-##### 关于网络请求
-
 #### Runloop的实际应用
+##### AsyncDisplayKit原理
+UI线程一旦出现繁重的任务就会导致界面卡顿掉帧, 通常任务分为三类: 排版, 绘制, 对象操作.
 
+排版包含计算视图大小, 计算文本高度, 重新计算子视图排版等; 绘制包括文本绘制, 图片绘制, 元素绘制; UI对象操作包含对象的创建, 设置属性和销毁. 
 
+其中钱两类插座可以通过各种方法扔到后台线程执行, 最后一类操作只能在主线程完成, 并且后面的操作有时候依赖前面操作的结果. ASDK所做的就是将能够放在后台的尽量放在后台, 不能放后台的尽量推迟. 
 
-问题:
+为此, ASDK创建一个ASDisplayNode的对象, 饼子啊内部封装了UIView/CALayer, 它具有和UIView/CALayer相似的属性. 这些属性都可以在后台线程进行修改, 开发者可以只通过Node来操作内部的UIView/CALayer, 这样就可以将排版和绘制放在后台线程, 但是无论怎么操作, 这些属性总需要在某个时刻同步到主线程的UIView/CALayer中去.
 
-什么是Runloop?
-
-
-概念, 数据结构, 事件循环机制, Runloop与NSTimer, Runloop与多线程
+ASDK仿照`QuartzCore/UIKit`框架的模式, 实现一套类似界面更新的机制: 即在主线程的Runloop中添加一个Observer, 监听BeforeWaiting和Exit事件, 在收到回掉时, 遍历所有放入其队列的待处理任务, 然后一一执行.
 
 ## 8.网络
 ### 8.1 http协议
@@ -1226,6 +1241,8 @@ ASDK的实现原理是什么?
 封装一个ASNode结点, 我们对UIView的操作都可以对应的映射成对ASNode的操作.这些设置会被放在后台线程中进行设置. ASNode会在合适的时机将渲染的结果交给UIView.
 
 ## 11.设计模式
+
+
 ## 12.算法
 
 1. 字符串反转: 依次交换起一个倒数只一个, 第二个倒数第二个字符, 直到`firstIndex==lastIndex`.
