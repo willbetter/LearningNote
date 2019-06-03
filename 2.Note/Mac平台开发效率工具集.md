@@ -80,6 +80,16 @@ cloc ./ --exclude-dir=libs,cache
 cloc ./ --exclude-ext=css,js
 ```
 
+## 5. Print Friendly & PDF
+一款Chrome上保存网页为PDF的神器, 一个Chrome插件: [Print Friendly & PDF](https://chrome.google.com/webstore/detail/print-friendly-pdf/ohlencieiipommannpdfcmfdpjjmeolj?hl=zh-CN)
+
+此插件的强大只处在于:
+
+1. 对于计数博客文章, 自动抓取主文章内容区域, 自动忽略非文章区域;
+2. 抓取后的页面可以预览, 对于多余的部分可以手动删除;
+3. 可直接保存成PDF并下载或者电子邮件发送到指定邮箱;
+4. 保存的PDF自动根据文章内容生成标题;
+
 
 
 
