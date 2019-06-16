@@ -1,0 +1,784 @@
+<!DOCTYPE html>
+<!-- saved from url=(0056)https://songlee24.github.io/2014/09/20/memory-alignment/ -->
+<html class="theme-next mist use-motion"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+  
+<meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+
+
+
+<meta http-equiv="Cache-Control" content="no-transform">
+<meta http-equiv="Cache-Control" content="no-siteapp">
+
+
+
+  <meta name="google-site-verification" content="ZEgamgW9hPgdy31Xvizc7s6AvVcabD1m6d3_btcrkbA">
+
+
+
+
+
+
+
+
+
+
+  
+  
+  <link href="./C_C++内存对齐 _ 神奕的博客_files/jquery.fancybox.css" rel="stylesheet" type="text/css">
+
+
+
+
+  
+  
+  
+  
+
+  
+    
+    
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+    
+    
+    <link href="./C_C++内存对齐 _ 神奕的博客_files/css" rel="stylesheet" type="text/css">
+  
+
+
+
+
+
+
+<link href="./C_C++内存对齐 _ 神奕的博客_files/font-awesome.min.css" rel="stylesheet" type="text/css">
+
+<link href="./C_C++内存对齐 _ 神奕的博客_files/main.css" rel="stylesheet" type="text/css">
+
+
+  <meta name="keywords" content="Cpp,">
+
+
+
+
+
+  <link rel="alternate" href="https://songlee24.github.io/atom.xml" title="神奕的博客" type="application/atom+xml">
+
+
+
+
+  <link rel="shortcut icon" type="image/x-icon" href="https://songlee24.github.io/favicon.ico?v=5.0.1">
+
+
+
+
+
+
+<meta name="description" content="下面是网易的一道笔试题：struct { uint32_t m1; char m2; } varray[2];以下哪些判断一定成立？（多选）
+
+sizeof(varray[0]) == 5
+sizeof(varray[0]) == 8
+(void*)&amp;amp;(varray[0].m1) &amp;lt; (void*)&amp;amp;(varray[0].m2)
+(char*)&amp;amp;varray[0] =">
+<meta property="og:type" content="article">
+<meta property="og:title" content="C/C++内存对齐">
+<meta property="og:url" content="http://yoursite.com/2014/09/20/memory-alignment/index.html">
+<meta property="og:site_name" content="神奕的博客">
+<meta property="og:description" content="下面是网易的一道笔试题：struct { uint32_t m1; char m2; } varray[2];以下哪些判断一定成立？（多选）
+
+sizeof(varray[0]) == 5
+sizeof(varray[0]) == 8
+(void*)&amp;amp;(varray[0].m1) &amp;lt; (void*)&amp;amp;(varray[0].m2)
+(char*)&amp;amp;varray[0] =">
+<meta property="og:image" content="http://img.blog.csdn.net/20140921230124812?watermark/2/text/aHR0cDovL2Jsb2cuY3Nkbi5uZXQvbGlzb25nbGlzb25nbGlzb25n/font/5a6L5L2T/fontsize/400/fill/I0JBQkFCMA==/dissolve/70/gravity/SouthEast">
+<meta property="og:image" content="http://img.blog.csdn.net/20140922013948031?watermark/2/text/aHR0cDovL2Jsb2cuY3Nkbi5uZXQvbGlzb25nbGlzb25nbGlzb25n/font/5a6L5L2T/fontsize/400/fill/I0JBQkFCMA==/dissolve/70/gravity/SouthEast">
+<meta property="og:image" content="http://img.blog.csdn.net/20140922222535500?watermark/2/text/aHR0cDovL2Jsb2cuY3Nkbi5uZXQvbGlzb25nbGlzb25nbGlzb25n/font/5a6L5L2T/fontsize/400/fill/I0JBQkFCMA==/dissolve/70/gravity/SouthEast">
+<meta property="og:image" content="http://img.blog.csdn.net/20140922203635315?watermark/2/text/aHR0cDovL2Jsb2cuY3Nkbi5uZXQvbGlzb25nbGlzb25nbGlzb25n/font/5a6L5L2T/fontsize/400/fill/I0JBQkFCMA==/dissolve/70/gravity/SouthEast">
+<meta property="og:image" content="http://img.blog.csdn.net/20140922223352175?watermark/2/text/aHR0cDovL2Jsb2cuY3Nkbi5uZXQvbGlzb25nbGlzb25nbGlzb25n/font/5a6L5L2T/fontsize/400/fill/I0JBQkFCMA==/dissolve/70/gravity/SouthEast">
+<meta property="og:image" content="http://img.blog.csdn.net/20140922211012703?watermark/2/text/aHR0cDovL2Jsb2cuY3Nkbi5uZXQvbGlzb25nbGlzb25nbGlzb25n/font/5a6L5L2T/fontsize/400/fill/I0JBQkFCMA==/dissolve/70/gravity/SouthEast">
+<meta property="og:image" content="http://img.blog.csdn.net/20140922224436503?watermark/2/text/aHR0cDovL2Jsb2cuY3Nkbi5uZXQvbGlzb25nbGlzb25nbGlzb25n/font/5a6L5L2T/fontsize/400/fill/I0JBQkFCMA==/dissolve/70/gravity/SouthEast">
+<meta property="og:image" content="http://img.blog.csdn.net/20140922225651156?watermark/2/text/aHR0cDovL2Jsb2cuY3Nkbi5uZXQvbGlzb25nbGlzb25nbGlzb25n/font/5a6L5L2T/fontsize/400/fill/I0JBQkFCMA==/dissolve/70/gravity/SouthEast">
+<meta property="og:image" content="http://img.blog.csdn.net/20140922231621296?watermark/2/text/aHR0cDovL2Jsb2cuY3Nkbi5uZXQvbGlzb25nbGlzb25nbGlzb25n/font/5a6L5L2T/fontsize/400/fill/I0JBQkFCMA==/dissolve/70/gravity/SouthEast">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="C/C++内存对齐">
+<meta name="twitter:description" content="下面是网易的一道笔试题：struct { uint32_t m1; char m2; } varray[2];以下哪些判断一定成立？（多选）
+
+sizeof(varray[0]) == 5
+sizeof(varray[0]) == 8
+(void*)&amp;amp;(varray[0].m1) &amp;lt; (void*)&amp;amp;(varray[0].m2)
+(char*)&amp;amp;varray[0] =">
+
+
+
+<script type="text/javascript" id="hexo.configuration">
+  var NexT = window.NexT || {};
+  var CONFIG = {
+    scheme: 'Mist',
+    sidebar: {"position":"left","display":"post"},
+    fancybox: true,
+    motion: true,
+    duoshuo: {
+      userId: 0,
+      author: '博主'
+    }
+  };
+</script>
+
+
+
+
+  <link rel="canonical" href="http://yoursite.com/2014/09/20/memory-alignment/">
+
+  <title> C/C++内存对齐 | 神奕的博客 </title>
+<script type="text/javascript" async="" id="duoshuo-script" src="https://static.duoshuo.com/embed.js" charset="UTF-8"></script><style type="text/css">.fancybox-margin{margin-right:15px;}</style></head>
+
+<body itemscope="" itemtype="http://schema.org/WebPage" lang="zh-Hans" class="" style="padding-right: 0px;">
+
+  
+
+
+
+
+
+
+
+
+
+
+  
+  
+    
+  
+
+  <div class="container one-collumn sidebar-position-left page-post-detail ">
+    <div class="headband"></div>
+
+    <header id="header" class="header" itemscope="" itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-meta ">
+  
+
+  <div class="custom-logo-site-title">
+    <a href="https://songlee24.github.io/" class="brand" rel="start" style="opacity: 1;">
+      <span class="logo-line-before"><i class="" style="transform: translateX(100%);"></i></span>
+      <span class="site-title" style="opacity: 1; top: 0px;">神奕的博客</span>
+      <span class="logo-line-after"><i class="" style="transform: translateX(-100%);"></i></span>
+    </a>
+  </div>
+  <p class="site-subtitle" style="opacity: 1; top: 0px;">李松</p>
+</div>
+
+<div class="site-nav-toggle">
+  <button>
+    <span class="btn-bar"></span>
+    <span class="btn-bar"></span>
+    <span class="btn-bar"></span>
+  </button>
+</div>
+
+<nav class="site-nav">
+  
+
+  
+    <ul id="menu" class="menu">
+      
+        
+        <li class="menu-item menu-item-home" style="opacity: 1; transform: translateY(0px);">
+          <a href="https://songlee24.github.io/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-home"></i> <br>
+            
+            首页
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-categories" style="opacity: 1; transform: translateY(0px);">
+          <a href="https://songlee24.github.io/categories" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-th"></i> <br>
+            
+            分类
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-archives" style="opacity: 1; transform: translateY(0px);">
+          <a href="https://songlee24.github.io/archives" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-archive"></i> <br>
+            
+            归档
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-tags" style="opacity: 1; transform: translateY(0px);">
+          <a href="https://songlee24.github.io/tags" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-tags"></i> <br>
+            
+            标签
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-about" style="opacity: 1; transform: translateY(0px);">
+          <a href="https://songlee24.github.io/about" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-user"></i> <br>
+            
+            关于
+          </a>
+        </li>
+      
+
+      
+    </ul>
+  
+
+  
+</nav>
+
+ </div>
+    </header>
+
+    <main id="main" class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          <div id="content" class="content">
+            
+
+  <div id="posts" class="posts-expand">
+    
+
+  
+  
+
+  
+  
+  
+
+  <article class="post post-type-normal" itemscope="" itemtype="http://schema.org/Article" style="opacity: 1; display: block; transform: translateY(0px);">
+
+    
+      <header class="post-header">
+
+        
+        
+          <h1 class="post-title" itemprop="name headline">
+            
+            
+              
+                C/C++内存对齐
+              
+            
+          </h1>
+        
+
+        <div class="post-meta">
+          <span class="post-time">
+            <span class="post-meta-item-icon">
+              <i class="fa fa-calendar-o"></i>
+            </span>
+            <span class="post-meta-item-text">发表于</span>
+            <time itemprop="dateCreated" datetime="2014-09-20T01:57:06+08:00" content="2014-09-20">
+              2014-09-20
+            </time>
+          </span>
+
+          
+            <span class="post-category">
+              &nbsp; | &nbsp;
+              <span class="post-meta-item-icon">
+                <i class="fa fa-folder-o"></i>
+              </span>
+              <span class="post-meta-item-text">分类于</span>
+              
+                <span itemprop="about" itemscope="" itemtype="https://schema.org/Thing">
+                  <a href="https://songlee24.github.io/categories/Lang-Cpp/" itemprop="url" rel="index">
+                    <span itemprop="name">Lang.-Cpp</span>
+                  </a>
+                </span>
+
+                
+                
+
+              
+            </span>
+          
+
+          
+            
+              <span class="post-comments-count">
+                &nbsp; | &nbsp;
+                <a href="https://songlee24.github.io/2014/09/20/memory-alignment/#comments" itemprop="discussionUrl">
+                  <span class="post-comments-count ds-thread-count" data-thread-key="2014/09/20/memory-alignment/" itemprop="commentsCount"></span>
+                </a>
+              </span>
+            
+          
+
+          
+
+          
+          
+
+          
+        </div>
+      </header>
+    
+
+
+    <div class="post-body" itemprop="articleBody">
+
+      
+      
+
+      
+        <p>下面是网易的一道笔试题：<code>struct { uint32_t m1; char m2; } varray[2];</code>以下哪些判断一定成立？（多选）</p>
+<ol>
+<li><code>sizeof(varray[0]) == 5</code></li>
+<li><code>sizeof(varray[0]) == 8</code></li>
+<li><code>(void*)&amp;(varray[0].m1) &lt; (void*)&amp;(varray[0].m2)</code></li>
+<li><code>(char*)&amp;varray[0] == (char*)&amp;(varray[0].m1)</code></li>
+<li><code>(char*)&amp;varray[0] + sizeof(varray[0]) == (char*)&amp;varray[1]</code></li>
+<li><code>(char*)&amp;(varray[0].m2) + 1 == (char*)&amp;varray[1]</code></li>
+<li><code>(char*)&amp;(varray[0].m2) + 4 == (char*)&amp;varray[1]</code></li>
+</ol>
+<p>这个题目考查的就是内存对齐的知识点，看完这篇文章你就知道这道题应该选什么了。<a id="more"></a></p>
+<p><br></p>
+<h3 id="一、什么是内存对齐">一、什么是内存对齐</h3><p><strong>内存对齐（Memory alignment）</strong>，也叫字节对齐。</p>
+<p>现代计算机中内存空间都是按照 byte 划分的，从理论上讲似乎对任何类型的变量的访问可以从任何地址开始，但实际情况是在访问特定类型变量的时候经常在特定的内存地址访问，这就需要各种类型数据按照一定的规则在空间上排列，而不是顺序的一个接一个的排放，这就是对齐。</p>
+<p>举一个简单的例子，<code>uint32_t</code>所占内存空间为 4 bytes，<code>char</code>为 1 byte。如果把它们放在一个结构体中，则所占的内存空间应该是 4 + 1 = 5 bytes 。而事实上，在VS2012和gcc环境下，sizeof 操作的结果都是 8 bytes：<br></p><figure class="highlight c"><table><tbody><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">struct</span></span><br><span class="line">{</span><br><span class="line">    <span class="keyword">uint32_t</span> m1;    <span class="comment">// #include&lt;stdint.h&gt;</span></span><br><span class="line">    <span class="keyword">char</span> m2;</span><br><span class="line">}varray;</span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">int</span> <span class="title">main</span><span class="params">()</span></span><br><span class="line"></span>{</span><br><span class="line">    <span class="built_in">printf</span>(<span class="string">"%d\n"</span>,<span class="keyword">sizeof</span>(varray.m1));  <span class="comment">// 输出4</span></span><br><span class="line">    <span class="built_in">printf</span>(<span class="string">"%d\n"</span>,<span class="keyword">sizeof</span>(varray.m2));  <span class="comment">// 输出1</span></span><br><span class="line">    <span class="built_in">printf</span>(<span class="string">"%d\n"</span>,<span class="keyword">sizeof</span>(varray));     <span class="comment">// 输出8</span></span><br><span class="line">    <span class="keyword">return</span> <span class="number">0</span>;</span><br><span class="line">}</span><br></pre></td></tr></tbody></table></figure><p></p>
+<p>示图：</p>
+<p><a href="./C_C++内存对齐 _ 神奕的博客_files/20140921230124812" class="fancybox" rel="group"><img src="./C_C++内存对齐 _ 神奕的博客_files/20140921230124812" alt=""></a></p>
+<p>这里是以4个字节为一个对齐单位。</p>
+<p><br></p>
+<h3 id="二、为什么要内存对齐">二、为什么要内存对齐</h3><p>之所以要内存对齐，有两方面的原因：</p>
+<ul>
+<li><p><strong>平台原因</strong>：各个硬件平台对存储空间的处理上有很大的不同。一些平台对某些特定类型的数据只能从某些特定地址开始存取。————- 比如，有些架构的CPU在访问 一个没有进行对齐的变量的时候会发生错误，那么在这种架构下编程必须保证字节对齐。</p>
+</li>
+<li><p><strong>性能原因</strong>：内存对齐可以提高存取效率。————- 比如，有些平台每次读都是从偶地址开始，如果一个int型（假设为32位系统）如果存放在偶地址开始的地方，那么一个读周期就可以读出这32bit，而如果存放在奇地址开始的地方，就需要2个读周期，并对两次读出的结果的高低字节进行拼凑才能得到该32bit数据。</p>
+</li>
+</ul>
+<p><br></p>
+<h3 id="三、对齐的规则">三、对齐的规则</h3><p>每个特定平台上的编译器都有自己的默认“对齐系数”（也叫对齐模数）。你可以通过预编译命令<code>#pragma pack(n)</code>，n=1,2,4,8,16 来改变这一系数，其中 n 就是你要指定的“对齐系数”。</p>
+<p><strong>1）概念：</strong></p>
+<p><strong>有效对齐值</strong>：是 <code>#pragma pack</code>指定值 和 结构体中最长数据类型长度 中<strong>较小</strong>的那个。有效对齐值也叫<strong>对齐单位</strong>。</p>
+<p>注意：VS、VC 默认是#pragma pack(8)，而 gcc 默认是#pragma pack(4)，并且gcc只支持1，2，4对齐。</p>
+<p><strong>2）规则：</strong></p>
+<ol>
+<li><p>结构体变量的<strong>首地址</strong>是有效对齐值（对齐单位）的整数倍。</p>
+</li>
+<li><p>结构体第一个成员的<strong>偏移量（offset）</strong>为0，以后每个成员相对于结构体首地址的 offset 都是<strong>该成员大小与有效对齐值中较小那个</strong>的整数倍，如有需要编译器会在成员之间加上填充字节。</p>
+</li>
+<li><p><strong>结构体的总大小</strong>为 有效对齐值 的<strong>整数倍</strong>，如有需要编译器会在最末一个成员之后加上填充字节。</p>
+</li>
+<li><p>结构体内类型相同的连续元素将在连续的空间内，和数组一样。</p>
+</li>
+</ol>
+<p>下面给出几个例子帮助理解（测试环境为VS2012）：</p>
+<p>例一：<br></p><figure class="highlight c++"><table><tbody><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">struct</span></span><br><span class="line">{</span><br><span class="line">    <span class="keyword">int</span> i;    <span class="comment">// 4个字节</span></span><br><span class="line">    <span class="keyword">char</span> c1;  <span class="comment">// 1个字节</span></span><br><span class="line">    <span class="keyword">char</span> c2;  <span class="comment">// 1个字节</span></span><br><span class="line">}x1;</span><br><span class="line"></span><br><span class="line"><span class="keyword">struct</span></span><br><span class="line">{</span><br><span class="line">    <span class="keyword">char</span> c1;  <span class="comment">// 1个字节</span></span><br><span class="line">    <span class="keyword">int</span> i;    <span class="comment">// 4个字节</span></span><br><span class="line">    <span class="keyword">char</span> c2;  <span class="comment">// 1个字节</span></span><br><span class="line">}x2;</span><br><span class="line"></span><br><span class="line"><span class="keyword">struct</span></span><br><span class="line">{</span><br><span class="line">    <span class="keyword">char</span> c1;  <span class="comment">// 1个字节</span></span><br><span class="line">    <span class="keyword">char</span> c2;  <span class="comment">// 1个字节</span></span><br><span class="line">    <span class="keyword">int</span> i;    <span class="comment">// 4个字节</span></span><br><span class="line">}x3;</span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">int</span> <span class="title">main</span><span class="params">()</span></span><br><span class="line"></span>{</span><br><span class="line">    <span class="built_in">printf</span>(<span class="string">"%d\n"</span>,<span class="keyword">sizeof</span>(x1));  <span class="comment">// 输出8</span></span><br><span class="line">    <span class="built_in">printf</span>(<span class="string">"%d\n"</span>,<span class="keyword">sizeof</span>(x2));  <span class="comment">// 输出12</span></span><br><span class="line">    <span class="built_in">printf</span>(<span class="string">"%d\n"</span>,<span class="keyword">sizeof</span>(x3));  <span class="comment">// 输出8</span></span><br><span class="line">    <span class="keyword">return</span> <span class="number">0</span>;</span><br><span class="line">}</span><br></pre></td></tr></tbody></table></figure><p></p>
+<p>可以看出，上面定义的三个结构体只是交换了成员声明的顺序。由于结构体中最长的数据类型为4个字节，而VS2010默认#pragma pack(8)，所以<strong>有效对齐值（对齐单位）为 4 bytes</strong>。根据前三条规则可以画出以下图：</p>
+<p><a href="./C_C++内存对齐 _ 神奕的博客_files/20140922013948031" class="fancybox" rel="group"><img src="./C_C++内存对齐 _ 神奕的博客_files/20140922013948031" alt=""></a></p>
+<p>例二：<br></p><figure class="highlight c++"><table><tbody><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">struct</span></span><br><span class="line">{</span><br><span class="line">    <span class="keyword">int</span> a;      <span class="comment">// 4个字节</span></span><br><span class="line">    <span class="keyword">char</span> b[<span class="number">6</span>];  <span class="comment">// 6个字节</span></span><br><span class="line">    <span class="keyword">double</span> c;   <span class="comment">// 8个字节</span></span><br><span class="line">}st;</span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">int</span> <span class="title">main</span><span class="params">()</span></span><br><span class="line"></span>{</span><br><span class="line">    <span class="built_in">printf</span>(<span class="string">"%d\n"</span>,<span class="keyword">sizeof</span>(st));  <span class="comment">// 输出24</span></span><br><span class="line">    <span class="keyword">return</span> <span class="number">0</span>;</span><br><span class="line">}</span><br></pre></td></tr></tbody></table></figure><p></p>
+<p>上面结构体中最长的数据类型 double 为 8 个字节，而VS2012中默认#pragma pack(8)，所以<strong>有效对齐值（对齐单位）</strong>为 <strong>8 bytes</strong>。根据前三条规则可以画出以下图：</p>
+<p><a href="./C_C++内存对齐 _ 神奕的博客_files/20140922222535500" class="fancybox" rel="group"><img src="./C_C++内存对齐 _ 神奕的博客_files/20140922222535500" alt=""></a></p>
+<p>其中的字符数组 <code>char b[6]</code> 可以看做6个单独的 char 成员。</p>
+<p><br></p>
+<h3 id="四、pragma_pack(n)">四、pragma pack(n)</h3><ul>
+<li><p>上面说到，不同平台上编译器的 pragma pack 默认值不同。而我们可以通过预编译命令<code>#pragma pack(n)</code>，n=1,2,4,8,16 来改变这一对齐系数。</p>
+</li>
+<li><p><code>#pragma pack(n)</code>是通过改变<strong>有效对齐值</strong>来改变数据成员在内存中的布局，若你设定的 n 值没有影响或改变有效对齐值，则成员在内存中的布局不会改变。</p>
+</li>
+</ul>
+<p>下面就看看在1、2、4字节对齐的情况下例一、例二的变化：</p>
+<p><strong>1字节对齐：#pragma pack(1)</strong></p>
+<p>这时的有效对齐值（对齐单位）为 1 字节，则根据对齐规则，可知成员都是连续存储的。</p>
+<p>例一中的输出结果会变为 6，6，6，如下图：</p>
+<p><a href="./C_C++内存对齐 _ 神奕的博客_files/20140922203635315" class="fancybox" rel="group"><img src="./C_C++内存对齐 _ 神奕的博客_files/20140922203635315" alt=""></a></p>
+<p>例二中输出结果则变为 4 + 6 + 8 = 18：</p>
+<p><a href="./C_C++内存对齐 _ 神奕的博客_files/20140922223352175" class="fancybox" rel="group"><img src="./C_C++内存对齐 _ 神奕的博客_files/20140922223352175" alt=""></a></p>
+<p><strong>2字节对齐：#pragma pack(2)</strong></p>
+<p>这时的有效对齐值（对齐单位）为 2 字节，则根据对齐规则，可知例一的输出结果会变为 6，8，6，如下图：</p>
+<p><a href="./C_C++内存对齐 _ 神奕的博客_files/20140922211012703" class="fancybox" rel="group"><img src="./C_C++内存对齐 _ 神奕的博客_files/20140922211012703" alt=""></a></p>
+<p>例二结构体中最长数据类型 double 为 8 个字节，所以有效对齐值是 2 。此时输出结果还是18，如下图：</p>
+<p><a href="./C_C++内存对齐 _ 神奕的博客_files/20140922224436503" class="fancybox" rel="group"><img src="./C_C++内存对齐 _ 神奕的博客_files/20140922224436503" alt=""></a></p>
+<p><strong>4字节对齐：#pragma pack(4)</strong></p>
+<p>对于例一，结构体中最长的数据类型 int 是 4 个字节，所以此时的有效对齐值（对齐单位）仍为 4，没有变化，所以输出仍然是 8，12，8。</p>
+<p>而在例二中，原来的有效对齐值为 8，现在变成了 4 。所以输出结果变为 20，具体如下图：</p>
+<p><a href="./C_C++内存对齐 _ 神奕的博客_files/20140922225651156" class="fancybox" rel="group"><img src="./C_C++内存对齐 _ 神奕的博客_files/20140922225651156" alt=""></a></p>
+<p>对于 8 字节对齐、 16 字节对齐，在这里就不举例了，相信根据对齐规则你可以很容易写出来。需要注意的是，有些编译器，比如gcc，只支持 1，2，4 对齐。</p>
+<p><br><br><br><br></p>
+<h3 id="附：答案">附：答案</h3><p>相信看到这里，文章开头的那个网易笔试题应该就很容易得出答案了。只需要根据内存对齐把结构体的内存布局图画出来就一目了然了：</p>
+<p><a href="./C_C++内存对齐 _ 神奕的博客_files/20140922231621296" class="fancybox" rel="group"><img src="./C_C++内存对齐 _ 神奕的博客_files/20140922231621296" alt=""></a></p>
+<p>所以多选答案应该是 2、4、5、7。</p>
+<p>对于这种类型的题目，最好的办法就是根据对齐规则画出对齐后的内存布局图，简单清晰且不容易出错。</p>
+<p>（全文完）</p>
+<p><br><br><br><br><br></p>
+
+      
+    </div>
+
+    <div>
+      
+        
+
+      
+    </div>
+
+    <div>
+      
+        
+
+      
+    </div>
+
+    <footer class="post-footer">
+      
+        <div class="post-tags">
+          
+            <a href="https://songlee24.github.io/tags/Cpp/" rel="tag">#Cpp</a>
+          
+        </div>
+      
+
+      
+        <div class="post-nav">
+          <div class="post-nav-next post-nav-item">
+            
+              <a href="https://songlee24.github.io/2014/09/02/cpp-virtual-table/" rel="next" title="C++进阶之虚函数表">
+                <i class="fa fa-chevron-left"></i> C++进阶之虚函数表
+              </a>
+            
+          </div>
+
+          <div class="post-nav-prev post-nav-item">
+            
+              <a href="https://songlee24.github.io/2014/09/20/linux-get-directory/" rel="prev" title="【Linux编程】C/C++获取目录下文件或目录">
+                【Linux编程】C/C++获取目录下文件或目录 <i class="fa fa-chevron-right"></i>
+              </a>
+            
+          </div>
+        </div>
+      
+
+      
+      
+    </footer>
+  </article>
+
+
+
+    <div class="post-spread">
+      
+    </div>
+  </div>
+
+
+          </div>
+          
+
+
+          
+  <div class="comments" id="comments">
+    
+      <div class="ds-thread" data-thread-key="2014/09/20/memory-alignment/" data-title="C/C++内存对齐" data-url="http://yoursite.com/2014/09/20/memory-alignment/">
+      </div>
+    
+  </div>
+
+
+        </div>
+        
+          
+  
+  <div class="sidebar-toggle">
+    <div class="sidebar-toggle-line-wrap">
+      <span class="sidebar-toggle-line sidebar-toggle-line-first" style="top: 0px; transform: rotateZ(0deg); width: 100%; opacity: 1; left: 0px;"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-middle" style="opacity: 1; width: 100%; left: 0px; top: 0px; transform: rotateZ(0deg);"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-last" style="top: 0px; transform: rotateZ(0deg); width: 100%; opacity: 1; left: 0px;"></span>
+    </div>
+  </div>
+
+  <aside id="sidebar" class="sidebar" style="display: none; width: 0px;">
+    <div class="sidebar-inner">
+
+      
+
+      
+        <ul class="sidebar-nav motion-element" style="opacity: 1; display: none; transform: translateX(0px);">
+          <li class="sidebar-nav-toc sidebar-nav-active" data-target="post-toc-wrap">
+            文章目录
+          </li>
+          <li class="sidebar-nav-overview" data-target="site-overview">
+            站点概览
+          </li>
+        </ul>
+      
+
+      <section class="site-overview sidebar-panel ">
+        <div class="site-author motion-element" itemprop="author" itemscope="" itemtype="http://schema.org/Person" style="opacity: 1; display: none; transform: translateX(0px);">
+          <img class="site-author-image" itemprop="image" src="./C_C++内存对齐 _ 神奕的博客_files/6904366" alt="Song Lee">
+          <p class="site-author-name" itemprop="name">Song Lee</p>
+          <p class="site-description motion-element" itemprop="description" style="opacity: 1; display: none; transform: translateX(0px);">放宽心，多努力</p>
+        </div>
+        <nav class="site-state motion-element" style="opacity: 1; display: none; transform: translateX(0px);">
+          <div class="site-state-item site-state-posts">
+            <a href="https://songlee24.github.io/archives">
+              <span class="site-state-item-count">88</span>
+              <span class="site-state-item-name">日志</span>
+            </a>
+          </div>
+
+          
+            <div class="site-state-item site-state-categories">
+              <a href="https://songlee24.github.io/categories">
+                <span class="site-state-item-count">17</span>
+                <span class="site-state-item-name">分类</span>
+              </a>
+            </div>
+          
+
+          
+            <div class="site-state-item site-state-tags">
+              <a href="https://songlee24.github.io/tags">
+                <span class="site-state-item-count">25</span>
+                <span class="site-state-item-name">标签</span>
+              </a>
+            </div>
+          
+
+        </nav>
+
+        
+          <div class="feed-link motion-element" style="opacity: 1; display: none; transform: translateX(0px);">
+            <a href="https://songlee24.github.io/atom.xml" rel="alternate">
+              <i class="fa fa-rss"></i>
+              RSS
+            </a>
+          </div>
+        
+
+        <div class="links-of-author motion-element" style="opacity: 1; display: none; transform: translateX(0px);">
+          
+            
+              <span class="links-of-author-item">
+                <a href="https://github.com/SongLee24" target="_blank" title="GitHub">
+                  
+                    <i class="fa fa-fw fa-github"></i>
+                  
+                  GitHub
+                </a>
+              </span>
+            
+              <span class="links-of-author-item">
+                <a href="http://blog.csdn.net/lisonglisonglisong" target="_blank" title="CSDN">
+                  
+                    <i class="fa fa-fw fa-globe"></i>
+                  
+                  CSDN
+                </a>
+              </span>
+            
+              <span class="links-of-author-item">
+                <a href="http://weibo.com/lisonglisong" target="_blank" title="Weibo">
+                  
+                    <i class="fa fa-fw fa-weibo"></i>
+                  
+                  Weibo
+                </a>
+              </span>
+            
+          
+        </div>
+
+        
+        
+          <div class="cc-license motion-element" itemprop="license" style="opacity: 1; display: none; transform: translateX(0px);">
+            <a href="https://creativecommons.org/licenses/by-nc-sa/4.0/" class="cc-opacity" target="_blank">
+              <img src="./C_C++内存对齐 _ 神奕的博客_files/cc-by-nc-sa.svg" alt="Creative Commons">
+            </a>
+          </div>
+        
+
+        
+        
+
+      </section>
+
+      
+        <section class="post-toc-wrap motion-element sidebar-panel sidebar-panel-active" style="opacity: 1; display: none; transform: translateX(0px);">
+          <div class="post-toc" style="max-height: 717px; width: calc(100% + 15px);">
+            
+              
+            
+            
+              <div class="post-toc-content"><ol class="nav"><li class="nav-item nav-level-3"><a class="nav-link" href="https://songlee24.github.io/2014/09/20/memory-alignment/#%E4%B8%80%E3%80%81%E4%BB%80%E4%B9%88%E6%98%AF%E5%86%85%E5%AD%98%E5%AF%B9%E9%BD%90"><span class="nav-number">1.</span> <span class="nav-text">一、什么是内存对齐</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="https://songlee24.github.io/2014/09/20/memory-alignment/#%E4%BA%8C%E3%80%81%E4%B8%BA%E4%BB%80%E4%B9%88%E8%A6%81%E5%86%85%E5%AD%98%E5%AF%B9%E9%BD%90"><span class="nav-number">2.</span> <span class="nav-text">二、为什么要内存对齐</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="https://songlee24.github.io/2014/09/20/memory-alignment/#%E4%B8%89%E3%80%81%E5%AF%B9%E9%BD%90%E7%9A%84%E8%A7%84%E5%88%99"><span class="nav-number">3.</span> <span class="nav-text">三、对齐的规则</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="https://songlee24.github.io/2014/09/20/memory-alignment/#%E5%9B%9B%E3%80%81pragma_pack(n)"><span class="nav-number">4.</span> <span class="nav-text">四、pragma pack(n)</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="https://songlee24.github.io/2014/09/20/memory-alignment/#%E9%99%84%EF%BC%9A%E7%AD%94%E6%A1%88"><span class="nav-number">5.</span> <span class="nav-text">附：答案</span></a></li></ol></div>
+            
+          </div>
+        </section>
+      
+
+    </div>
+  </aside>
+
+
+        
+      </div>
+    </main>
+
+    <footer id="footer" class="footer">
+      <div class="footer-inner">
+        <div class="copyright">
+  
+  ©  2014 - 
+  <span itemprop="copyrightYear">2016</span>
+  <span class="with-love">
+    <i class="fa fa-heart"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">Song Lee</span>
+</div>
+
+<div class="powered-by">
+  <div style="float:left;margin-top:7px;margin-right:10px;">
+	<script type="text/javascript">var cnzz_protocol = (("https:" == document.location.protocol) ? " https://" : " http://");document.write(unescape("%3Cspan id='cnzz_stat_icon_1254974724'%3E%3C/span%3E%3Cscript src='" + cnzz_protocol + "s11.cnzz.com/z_stat.php%3Fid%3D1254974724%26show%3Dpic' type='text/javascript'%3E%3C/script%3E"));</script><span id="cnzz_stat_icon_1254974724"><a href="https://www.cnzz.com/stat/website.php?web_id=1254974724" target="_blank" title="站长统计"><img border="0" hspace="0" vspace="0" src="./C_C++内存对齐 _ 神奕的博客_files/pic.gif"></a></span><script src="./C_C++内存对齐 _ 神奕的博客_files/z_stat.php" type="text/javascript"></script><script src="./C_C++内存对齐 _ 神奕的博客_files/core.php" charset="utf-8" type="text/javascript"></script>
+  </div>
+</div>
+
+<div class="powered-by">
+  由 <a class="theme-link" href="https://hexo.io/">Hexo</a> 强力驱动
+</div>
+
+<div class="theme-info">
+  主题 -
+  <a class="theme-link" href="https://github.com/iissnan/hexo-theme-next">
+    NexT.Mist
+  </a>
+</div>
+
+        
+
+        
+      </div>
+    </footer>
+
+    <div class="back-to-top back-to-top-on">
+      <i class="fa fa-arrow-up"></i>
+    </div>
+  </div>
+
+  
+
+<script type="text/javascript">
+  if (Object.prototype.toString.call(window.Promise) !== '[object Function]') {
+    window.Promise = null;
+  }
+</script>
+
+
+
+
+
+
+
+
+
+  
+
+
+
+  
+  <script type="text/javascript" src="./C_C++内存对齐 _ 神奕的博客_files/index.js"></script>
+
+  
+  <script type="text/javascript" src="./C_C++内存对齐 _ 神奕的博客_files/fastclick.min.js"></script>
+
+  
+  <script type="text/javascript" src="./C_C++内存对齐 _ 神奕的博客_files/jquery.lazyload.js"></script>
+
+  
+  <script type="text/javascript" src="./C_C++内存对齐 _ 神奕的博客_files/velocity.min.js"></script>
+
+  
+  <script type="text/javascript" src="./C_C++内存对齐 _ 神奕的博客_files/velocity.ui.min.js"></script>
+
+  
+  <script type="text/javascript" src="./C_C++内存对齐 _ 神奕的博客_files/jquery.fancybox.pack.js"></script>
+
+
+  
+
+
+  <script type="text/javascript" src="./C_C++内存对齐 _ 神奕的博客_files/utils.js"></script>
+
+  <script type="text/javascript" src="./C_C++内存对齐 _ 神奕的博客_files/motion.js"></script>
+
+
+
+  
+  
+
+  
+  <script type="text/javascript" src="./C_C++内存对齐 _ 神奕的博客_files/scrollspy.js"></script>
+<script type="text/javascript" src="./C_C++内存对齐 _ 神奕的博客_files/post-details.js"></script>
+
+
+
+  
+
+
+  <script type="text/javascript" src="./C_C++内存对齐 _ 神奕的博客_files/bootstrap.js"></script>
+
+
+
+  
+
+  
+    
+  
+
+  <script type="text/javascript">
+    var duoshuoQuery = {short_name:"songlee24"};
+    (function() {
+      var ds = document.createElement('script');
+      ds.type = 'text/javascript';ds.async = true;
+      ds.id = 'duoshuo-script';
+      ds.src = (document.location.protocol == 'https:' ? 'https:' : 'http:') + '//static.duoshuo.com/embed.js';
+      ds.charset = 'UTF-8';
+      (document.getElementsByTagName('head')[0]
+      || document.getElementsByTagName('body')[0]).appendChild(ds);
+    })();
+  </script>
+
+  
+    
+    <script src="./C_C++内存对齐 _ 神奕的博客_files/ua-parser.min.js"></script>
+    <script src="./C_C++内存对齐 _ 神奕的博客_files/hook-duoshuo.js"></script>
+  
+
+
+
+
+
+
+  
+  
+
+  
+
+  
+
+  
+
+
+
+</body></html>

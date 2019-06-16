@@ -97,8 +97,12 @@ cloc ./ --exclude-ext=css,js
 4. 屏蔽iOS更新,制作铃声,抹除数据等.
 5. 高清壁纸,铃声都还不错.
 
+## 7. XtraFinder: 增强型的Finder.
 
 
+## 8. Alfred: 便捷搜索,工作流.
 
 
-
+## 9.破解百度网盘
+突破百度网盘网速限制的方法. 好使.
+https://github.com/Dev-Dongfang/BaiduNetdiskPlugin-macOS
