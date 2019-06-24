@@ -1,10 +1,8 @@
-# 什么是LLVM?
-* 官网: https://llvm.org
-* LLVM: LLVM Project is a collection of modular and reuseable compiler and toolchain technologies. LLVM项目是模块化的, 可重用的编译期以及工具链技术的集合.
-* 创始人: Chris Lattner, 亦是Swift之父.
+[浅谈iOS编译过程&LLVM详解&swift编译过程](https://www.jianshu.com/p/5b2cce762106)
 
-llvm这名名称本身不是首字母缩略词, 它就是项目的全名.
 
-![](images/)
 
+浅谈iOS编译过程&LLVM详解&swift编译过程本地路径[浅谈iOS编译过程](../resourse/material/浅谈iOS编译过程&LLVM编译过程&swift编译过程.pdf)
+
+MJ关于LLVM讲解:[LLVM详解](../resourse/material/LLVM详解.pdf)
 

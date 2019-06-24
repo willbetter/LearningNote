@@ -106,3 +106,10 @@ cloc ./ --exclude-ext=css,js
 ## 9.破解百度网盘
 突破百度网盘网速限制的方法. 好使.
 https://github.com/Dev-Dongfang/BaiduNetdiskPlugin-macOS
+
+## 10.typora-markdown编辑器
+官网:https://www.typora.io 
+一款可视化的Markdown编辑器, 笔记后马上可以看到效果, 支持不同主题的预览格式, 非常的实用.
+
+
+
