@@ -740,10 +740,10 @@ NSLock锁定代码的临界区调用方法重新获取锁, 则会**导致死锁*
 什么是Runloop? 
 **Runloop是通过内部维护的`事件循环`来对`事件/消息进行管理`的一个对象.**
 
-![](images/WX20190510-145338@2x.png)
+![](images/WX20190626-180829@2x.png)
 
 什么是事件循环, 事件循环的机制是什么? 
-维护的事件循环可以用来不断的处理消息和事件, 然后堆他们进行管理. 如果没有消息处理时候, 事件循环会进入休眠状态避免资源的占用; 当有消息处理时候, 事件循环会被立即唤醒.
+维护的事件循环可以用来不断的处理消息和事件, 然后对他们进行管理. 如果没有消息处理时候, 事件循环会进入休眠状态避免资源的占用; 当有消息处理时候, 事件循环会被立即唤醒.
 
 main函数为什么不会自动退出?
 main函数中会启动主线程的runloop, runloop是对事件循环的维护机制, 有消息时候就处理消息, 没有消息时候就会进入休眠状态. 在此期间设计到用户态到内核态, 内核态到用户态的切换.
@@ -755,7 +755,7 @@ CFRunloop相关数据结构: CFRunloop, CGRunloopMode, Source/Timer/Observer.
 
 CFRunloop的数据结构如下图所示: 
 
-![](images/)
+![](images/WX20190626-172611@2x.png)
 
 * pthread: 线程, 线程和runloop是一一对应的关系.
 * currentMode: 是CFRunloopMode数据结构.
@@ -789,9 +789,11 @@ CFRunloopObserver可以对runloop某些时机进行观察, 可观察的时机有
 ### 7.4 Runloop与NSTimer
 滑动tableview时候, 定时器还会生效吗?
 
-默认情况下, 滑动tableView时候定时器是不会生效的. 因为默认情况下定时器会被添加到 runloop的`default` mode中. 而滑动tableview时候, runloop会将模式切换到`tracking`模式, 此时default mode下的定时器/sources等事件是不会被触发的(设计不同mode的目的就是为了隔离事件的响应). 
+默认情况下, 滑动tableView时候定时器是不会生效的. 因为默认情况下定时器会被添加到 runloop的`default` mode中. 而滑动tableview时候, runloop会将模式切换到`tracking`模式, 此时default mode下的定时器/sources等事件是不会被触发的(**设计不同mode的目的就是为了隔离事件的响应**). 
 
 解决: 可以将定时器添加到commonMode中. commonMode并不是一个具体的mode, 而是多个模式的集合, 当把一个timer添加到一个commonMode时, 会将timer添加到多个runloop支持的mode中去.
+
+> CommonMode并不是一个具体的mode，而是mode的集合。它存在的作用是同步Source、Timer、Observer到同一个Mode中的一种技术方案。
 
 ### 7.5 Runloop与多线程
 线程和runloop是一一对应的. 默认情况下, 线程的runloop是没有创建的, 我们需要自己手动创建runloop. 
