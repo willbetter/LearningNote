@@ -407,6 +407,24 @@ atomic保证的线程安全是通过属性访问时候的线程安全. 比如ato
 3. KVO的实现原理是怎样的.
 4. 能否为分类添加成员变量.
 
+```
+// MRC下如何重写retain修饰变量的setter方法?
+- (void)setObj:(id)obj {
+	if (_obj != obj) {
+		[_obj release];
+		_obj = [obj retain];
+	}
+}
+```
+
+**注意事项：** 
+
+1. 当程序启动时，就会加载项目中所有的类和分类，而且加载后会调用每个类和分类的+load方法，只会调用一次；
+2. 当第一次使用某个类时，就会调用当前类的+initialize方法；
+3. 先加载父类，再加载子类（先调用父类的+load方法，再调用子类的+load方法，最后调用分类的+load方法），先初始化父类，再初始化子类（先调用父类的+initialize方法，再调用子类的+initialize方法）。
+4. 注意：在初始化的时候，如果在分类中重写了+initialize方法，则会覆盖掉父类的。
+5. 重写+initialize方法可以监听类的使用情况。
+
 ## 4.UI视图
 ### 4.1 UITableView相关
 **tableView的重用机制原理.** 使用缓存池进行cell的重用. 如果缓存池中cell不足则创建新的cell, 如果cell从屏幕上编程invisible则将cell加入缓存池中, 以此达到cell重用的目的.
@@ -505,7 +523,7 @@ CPU异步绘制原理如下图所示. 在异步线程中进行视图的绘制, �
 
 ## 5.Block
 ### 5.1 block介绍
-> 什么是block? Block是将函数以及其执行上下文封装起来的对象. 
+> 什么是block? **Block是将函数以及其执行上下文封装起来的对象.** 
 
 **Block本质是什么?** 
 
@@ -606,14 +624,14 @@ static void __MCBlock__method_block_func_0(struct __MCBlock__method_block_impl_0
 ### 5.3 `__block`修饰符
 一般情况下, 对被截获变量进行**赋值操作**需要添加`__block`修饰符. 仅仅是使用是不需要添加`__block`修饰符的, 例如在block中给array添加或者移出数据, array时不需要添加__block修饰符的.
 
-修改今天局部变量, 全局变量和静态全局变量时候是不需要使用__block修饰符的.
+修改静态局部变量, 全局变量和静态全局变量时候是不需要使用__block修饰符的.
 
 如下图所示, 实际上使用__block修饰的变量都会被转换成对象. 其中有isa指针, 其中的`multiplier`就是变量真实的值. 在栈上的block其`__forwarding`指针指向其自身.
 
 ![](images/WX20190508-130438@2x.png)
 
 ### 5.4 Block内存管理
-block分为三种类型, 全局的block(`__NSConcreateFlobalBlock`), 栈上的block(`__NSConcerteStackBlock`), 堆上的block(`__NSConcreateMallocBlock`). 对栈上的block拷贝会拷贝到堆上, 全局blockcopy什么也不发生, 对堆上的block拷贝会增加其引用计数. 如下图所示.
+block分为三种类型, 全局的block(`__NSConcreateGlobalBlock`), 栈上的block(`__NSConcerteStackBlock`), 堆上的block(`__NSConcreateMallocBlock`). 对栈上的block拷贝会拷贝到堆上, 全局blockcopy什么也不发生, 对堆上的block拷贝会增加其引用计数. 如下图所示.
 
 ![](images/WX20190508-141113@2x.png)
 
