@@ -639,7 +639,6 @@ block分为三种类型, 全局的block(`__NSConcreateGlobalBlock`), 栈上的bl
 
 ![](images/WX20190508-141327@2x.png)
 
-
 `__forwarding`存在的意义: 不论在任何内存位置, 都可以通过__forwarding访问同一个__block变量. 如果block没有发生拷贝则访问的是栈上的block变量, 如果发生了拷贝, 则不论是栈上的block还是堆上的block其访问的都是堆上的__block变量, 如图所示.
 
 ![](images/WX20190508-141559@2x.png)
@@ -1265,7 +1264,7 @@ ASDK的实现原理是什么?
 封装一个ASNode结点, 我们对UIView的操作都可以对应的映射成对ASNode的操作.这些设置会被放在后台线程中进行设置. ASNode会在合适的时机将渲染的结果交给UIView.
 
 ## 11.设计模式
-![设计模式相关内容请点击](./设计模式-Note.md)
+[设计模式相关内容请点击](./设计模式-Note.md)
 
 ## 12.算法
 

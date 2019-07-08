@@ -8,10 +8,6 @@ MVC， MVP， MVVM-RxSwift等App架构。
 
 
 
-
-
-
-
 APP优化方案：
 
 卡顿优化
@@ -166,7 +162,17 @@ theos运行原理: App启动时去指定位置加载动态库, 动态库加载�
 
 
 
+### 集合类型协议
 
+Array > MutableCollection > 
 
+Dictionary > Collection,Sequeue
 
+Set > Collection,Sequeue
+
+Dict直接实现了collection协议，也实现了sequeue协议，因为要重写迭代器的方法。
+
+Sequeue：序列， 主要定义了迭代器方法，定义序列操作方法。
+
+Collection：集合类型协议。定义集合相关的方法。
 
