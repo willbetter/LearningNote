@@ -1,94 +1,7 @@
 Table of Contents
 =================
 
-* [1. 内存管理](#1-内存管理)
- * [1.1 内存布局](#11-内存布局)
- * [1.2 内存管理方案](#12-内存管理方案)
-    * [NONPOINTER_ISA：](#nonpointer_isa)
-    * [散列表：](#散列表)
- * [1.3 数据结构](#13-数据结构)
-    * [Spinlock_t自旋锁](#spinlock_t自旋锁)
-    * [RefcountMap 引用计数表](#refcountmap-引用计数表)
-    * [weak_table_t 弱引用表](#weak_table_t-弱引用表)
- * [1.4 ARC &amp; MRC](#14-arc--mrc)
- * [1.5 引用计数管理](#15-引用计数管理)
- * [1.6 弱引用管理](#16-弱引用管理)
- * [1.7 自动释放池](#17-自动释放池)
- * [1.8 循环引用](#18-循环引用)
-    * [NSTimer的循环引用问题](#nstimer的循环引用问题)
-* [2.Runtime](#2runtime)
- * [2.1 数据结构](#21-数据结构)
- * [2.2 类对象与元类对象](#22-类对象与元类对象)
- * [2.3 消息传递](#23-消息传递)
- * [2.4 方法查找](#24-方法查找)
- * [2.5 消息转发](#25-消息转发)
- * [2.6 Method-Swizzling](#26-method-swizzling)
- * [2.7 动态添加方法](#27-动态添加方法)
- * [2.8 动态方法解析](#28-动态方法解析)
-* [3. Objective-C语言特性](#3-objective-c语言特性)
- * [3.1 分类(category)](#31-分类category)
- * [3.2 关联对象](#32-关联对象)
- * [3.3 扩展](#33-扩展)
- * [3.4 代理](#34-代理)
- * [3.5 通知](#35-通知)
- * [3.6 KVO](#36-kvo)
- * [3.7 KVC](#37-kvc)
- * [3.8 属性关键字](#38-属性关键字)
-* [4.UI视图](#4ui视图)
- * [4.1 UITableView相关](#41-uitableview相关)
- * [4.2 事件传递&amp;事件响应](#42-事件传递事件响应)
- * [4.3 图像显示原理](#43-图像显示原理)
- * [4.4 UI卡顿和掉帧的原因](#44-ui卡顿和掉帧的原因)
- * [4.5 UI视图绘制原理&amp;异步绘制](#45-ui视图绘制原理异步绘制)
- * [4.6 离屏渲染](#46-离屏渲染)
-* [5.Block](#5block)
- * [5.1 block介绍](#51-block介绍)
- * [5.2 Block截获变量](#52-block截获变量)
- * [5.3 __block修饰符](#53-__block修饰符)
- * [5.4 Block内存管理](#54-block内存管理)
- * [5.5 Block循环引用](#55-block循环引用)
-* [6.多线程](#6多线程)
- * [6.1 GCD](#61-gcd)
- * [6.2 NSOperation](#62-nsoperation)
- * [6.3 多线程与锁](#63-多线程与锁)
-* [7.Runloop](#7runloop)
- * [7.1 什么是Runloop](#71-什么是runloop)
- * [7.2 Runloop数据结构](#72-runloop数据结构)
- * [7.3 事件循环机制](#73-事件循环机制)
- * [7.4 Runloop与NSTimer](#74-runloop与nstimer)
- * [7.5 Runloop与多线程](#75-runloop与多线程)
- * [7.6 深入理解RunLoop](#76-深入理解runloop)
-    * [runloop概念](#runloop概念)
-    * [Runloop与线程关系](#runloop与线程关系)
-    * [Runloop对外的接口](#runloop对外的接口)
-    * [Runloop的Mode](#runloop的mode)
-    * [Runloop的内部逻辑](#runloop的内部逻辑)
-    * [Runloop的底层实现](#runloop的底层实现)
-    * [苹果使用Runloop实现的功能](#苹果使用runloop实现的功能)
-       * [AutoreleasePool](#autoreleasepool)
-       * [事件响应](#事件响应)
-       * [手势识别](#手势识别)
-       * [界面更新](#界面更新)
-       * [定时器](#定时器)
-       * [PerformSelector](#performselector)
-       * [关于GCD](#关于gcd)
-       * [关于网络请求](#关于网络请求)
-    * [Runloop的实际应用](#runloop的实际应用)
-* [8.网络](#8网络)
- * [8.1 http协议](#81-http协议)
- * [8.2 https协议](#82-https协议)
-* [9.架构框架](#9架构框架)
- * [9.1 图片缓存](#91-图片缓存)
- * [9.2 阅读时长统计的设计](#92-阅读时长统计的设计)
- * [9.3 复杂页面结构设计](#93-复杂页面结构设计)
- * [9.4 客户端整体架构](#94-客户端整体架构)
-* [10.第三方库](#10第三方库)
- * [10.1 AFNetworking](#101-afnetworking)
- * [10.2 SDWebImage](#102-sdwebimage)
- * [10.3 ReactiveCocoa](#103-reactivecocoa)
- * [10.4 AsyncDisplayKit](#104-asyncdisplaykit)
-* [11.设计模式](#11设计模式)
-* [12.算法](#12算法)
+[TOC]
 
 ## 1. 内存管理
 ### 1.1 内存布局
@@ -195,7 +108,7 @@ delloc过程会去检查内存管理方式，是否包含弱引用指针，是�
 * __unsafe_unretained: 修饰对象不会增加引用计数，避免循环引用。如果其修饰对象在某一时刻被释放，则会产生悬垂指针。
 
 #### NSTimer的循环引用问题
-**NSTimer引起循环引用问题**。如图所示，及时vc对NSTimer弱引用，由于添加定时器时候，NSTimer对VC会产生强引用，而Runloop对NSTimer存在强引用，Runloop常驻内存，因此VC会被引用导致无法正确的释放。
+**NSTimer引起循环引用问题**。如图所示，解除vc对NSTimer强引用，由于添加定时器时候，NSTimer对VC会产生强引用，而Runloop对NSTimer存在强引用，Runloop常驻内存，因此VC会被引用导致无法正确的释放。
 
 ![](images/WX20190425-173457@2x.png)
 
@@ -276,7 +189,7 @@ oc中具体的消息传递过程如上图所示. 首先实例对象通过isa指�
 通过`class_addMethod`方法给实例添加方法.
 
 ### 2.8 动态方法解析
-`@dinamic`关键字可以标记属性动态决议. 冬天运行时语言将函数决议推迟到运行时; 编译时语言再编译期进行函数的决议.
+`@dinamic`关键字可以标记属性动态决议. 动态运行时语言将函数决议推迟到运行时; 编译时语言再编译期进行函数的决议.
 
 > 问题: 能否向编译后的类中增加实例变量? 
 > 编译后, 类的内存布局已经确定了, 是无法添加实例变量的; 如果是动态添加的类, 是可以添加实例变量的. 
@@ -380,7 +293,11 @@ KVO实现机制与原理如下图所示：
 ### 3.7 KVC
 使用kvc会破坏面向对象的封装性, 只要你知道私有变量的名称, 就能改变他的值.
 
-**赋值的原理:**1.查找是否实现setter方法, 如果有这优先调用setter方法完成赋值(注意:setter后面的键的第一字母必须是大写!). 2.如果找不到setter,调用`accessInstanceVariablesDirectly`进行查询.(如果返回YES，顺序匹配变量名与 _<key>，_is<Key>,<key>,is<Key>,匹配到则设定其值; 如果返回NO,结束查找。并调用  setValue：forUndefinedKey：报异常). 3.如果没有setter耶没有实例变量, 调用`setValue:forUndefineKey:`.
+**赋值的原理:**
+
+1. 查找是否实现setter方法, 如果有这优先调用setter方法完成赋值(注意:setter后面的键的第一字母必须是大写!).
+2. 如果找不到setter,调用`accessInstanceVariablesDirectly`进行查询.(如果返回YES，顺序匹配变量名与 _<key>，_is<Key>,<key>,is<Key>,匹配到则设定其值; 如果返回NO,结束查找。并调用  setValue：forUndefinedKey：报异常). 
+3. 如果没有setter耶没有实例变量, 调用`setValue:forUndefineKey:`.
 
 **取值的原理:**和赋值的原理一一对应. 先检查是否有响应个getter; 再调用`accessInstanceVariablesDirectly`进行查询; 还没有则调用`valueForUndefinedKey:`方法, 并报异常.
 
@@ -459,9 +376,9 @@ CPU和GPU渲染流程如下所示:
 
 ![](images/WX20190507-192531@2x.png)
 
-GPU的工作: Layout(主要是UI布局,文本宽高计算), Display(绘制,比如drawRect的绘制), Prepare(图片编码解码,比如UIImageView的解码动作), Commit(CoreAnimation对位图进行提交)
+CPU的工作: Layout(主要是UI布局,文本宽高计算), Display(绘制,比如drawRect的绘制), Prepare(图片编码解码,比如UIImageView的解码动作), Commit(CoreAnimation对位图进行提交)
 
-CPU的工作(OpenGL的渲染管线): 
+GPU的工作(OpenGL的渲染管线): 
 
 ![](images/WX20190507-192906@2x.png)
 
@@ -500,7 +417,7 @@ CPU异步绘制原理如下图所示. 在异步线程中进行视图的绘制, �
 
 **什么是离屏渲染, 你怎么理解离屏渲染的.**
 
-标注答案: 当我们设置了某些图层属性, 标记未其在未预合成之前无法直接显示的时候呢, 就会触发离屏渲染. 离屏渲染指的是在GPU在当前屏幕缓冲区以外开辟新的缓冲区进行渲染操作.
+标准答案: 当我们设置了某些图层属性, 标记未其在未预合成之前无法直接显示的时候呢, 就会触发离屏渲染. 离屏渲染指的是在GPU在当前屏幕缓冲区以外开辟新的缓冲区进行渲染操作.
 
 
 **何时会触发离屏渲染.**
@@ -518,8 +435,8 @@ CPU异步绘制原理如下图所示. 在异步线程中进行视图的绘制, �
 
 * 系统UI事件传递机制是什么?
 * 使UITableView滑动更加流畅的方案和思路有哪些?
-* 什么事离屏渲染?
-* UIview和CALayer关系是什么? 
+* 什么是离屏渲染?
+* UIView和CALayer关系是什么? 
 
 ## 5.Block
 ### 5.1 block介绍

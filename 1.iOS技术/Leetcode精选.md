@@ -10,7 +10,9 @@ Input: 1->2->3->4->5->NULL, m = 2, n = 4
 Output: 1->4->3->2->5->NULL
 ```
 
-这个题目看似和反转链表一样的简单, 但是实现起来并没有那么容易, 边界条件比反转链表多一点. 解决方案:1.先顺序遍历找到需要反转的结点的前一个结点标记为pre, 找到需要插入的第一个结点的前一个结点标记start, 需要反转的第二个结点标记then. 解决思路就是, **将them插入到pre的后面, 将then从start的后面删除.**
+这个题目看似和反转链表一样的简单, 但是实现起来并没有那么容易, 边界条件比反转链表多一点. 解决方案:
+
+1.先顺序遍历找到需要反转的结点的前一个结点标记为pre, 找到需要插入的第一个结点的前一个结点标记start, 需要反转的第二个结点标记then. 解决思路就是, **将them插入到pre的后面, 将then从start的后面删除.**
 
 ```
 //反转链表的m~n
@@ -142,27 +144,27 @@ class Solution {
 
 # 104. 二叉树最大深度
  Given a binary tree, find its maximum depth.
- 
+
  The maximum depth is the number of nodes along the longest path from the root node down to the farthest leaf node.
- 
+
  Note: A leaf is a node with no children.
- 
+
  Example:
- 
+
  Given binary tree [3,9,20,null,null,15,7],
- 
+
  3
  / \
  9  20
  /  \
  15   7
  return its depth = 3.
- 
- 
+
+
  **递归解决方案:**
- 
+
  **分解问题:** 第一层深度等一第二层的深度+1, 第二层深度等于第三层深度+1, 如果结点没有子结点, 则是最大深度.
- 
+
  代码如下所示: 先判断左子树深度, 再判断右子树深度, 比较两个深度最大的就是这个结点的最大深度, 依次递归查找.
 
 ```
