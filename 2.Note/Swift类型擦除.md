@@ -15,3 +15,4 @@
 Swift GG的这篇译文详细的讲解了swift中的类型擦除以及类型擦除的实现. [swift 类型擦除](https://swift.gg/2018/10/11/friday-qa-2017-12-08-type-erasure-in-swift/).
 
 如果上述连接失效可以参看这里:  [swift.gg-Swift 类型擦除.pdf](../resourse/material/swift.gg-Swift 类型擦除.pdf)
+

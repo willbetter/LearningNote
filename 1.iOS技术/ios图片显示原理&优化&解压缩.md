@@ -6,6 +6,10 @@
 
 # **浅谈ios中图片的解压缩**
 
+Reference: https://www.jianshu.com/p/4add78dbe4df
+
+详细请参考作者Blog。
+
 ## 图片加载的工作流
 
 概括来说，从磁盘加载一张图片，并将它显示到屏幕上，中间的主要工作流如下所示：

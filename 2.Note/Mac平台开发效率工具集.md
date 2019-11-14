@@ -1,6 +1,6 @@
 wireshark - 网络抓包工具.
 
-
+[TOC]
 
 ## 0.Mac功能集锦
 ### 0.1 屏幕共享
@@ -111,5 +111,27 @@ https://github.com/Dev-Dongfang/BaiduNetdiskPlugin-macOS
 官网:https://www.typora.io 
 一款可视化的Markdown编辑器, 笔记后马上可以看到效果, 支持不同主题的预览格式, 非常的实用.
 
+## 11.Hazel 
 
+一款可以自动监控并整理文件夹的工具，我们可以自定义规则堆文件进行归类。
+
+## 12.LSUnusedResources
+
+Mac App，排查项目中无用的图片资源。
+
+### 12.1 FengNiao
+
+喵神提供的一个排查无用图片文件的工具，是一个命令行工具，可以在Xcode中添加RunScript来使用，但是也存在误报的情况，最好手动二次确认。
+
+## 13. Asset Catalog Tinkerer
+
+查看Assets.car文件。
+
+## 14. LinkMap
+
+检查每个类占用空间大小工具: https://github.com/huanxsd/LinkMap
+
+## 15. aotomator
+
+mac上的workflow工作流工具。
 

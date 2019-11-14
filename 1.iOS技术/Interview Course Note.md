@@ -132,7 +132,7 @@ objc_class   <==>  Class
 objc_class继承子objc_object. objc_class主要包含三个成员变量: superClass, cache_t, class_data_bits_t.
 
 * superClass: 一个指向其父类的指针.
-* cache_t: 它是一个方法缓存列表, 主要用于快速查找方法执行函数; 是一个可增量扩展的哈希表结构; 是局部性原理的最佳应用(计算机中,个别的方法会被反复的调用,其它方法调用机会会很少).
+* cache_t: 它是一个方法缓存列表, 主要用于快速查找方法执行函数; 是一个可增量扩展的哈希表结构; 是**局部性原理**的最佳应用(计算机中,个别的方法会被反复的调用,其它方法调用机会会很少).
 * class_Data_bits_t: 通过多个引用层次, 包含属性列表, 协议列表, 方法列表等等信息.
 
 
@@ -210,7 +210,7 @@ oc中具体的消息传递过程如上图所示. 首先实例对象通过isa指�
 2. 在分类方法的实现中可以访问原有类的实例变量以及方法.
 3. 分类中可以重新实现原有类中的方法, 但是会覆盖掉原来的方法,导致原来的方法无法再使用.
 4. 方法调用的优先级: `分类 > 原有类 > 父类`, `若包含多个分类, 则最后参与编译的分类优先`.
-5. 分类时运行时决议的, 在运行时启动之后加载所有的分类(将分类中的方法以及属性添加的原始类上去).
+5. 分类是运行时决议的, 在运行时启动之后加载所有的分类(将分类中的方法以及属性添加的原始类上去).
 
 分类使用`category_t`结构体表示, 其中包含分类名字, 分类原型的cls, 实例方法列表/类方法列表/协议列表/属性列表等信息. 如下图所示:
 
@@ -417,7 +417,7 @@ CPU异步绘制原理如下图所示. 在异步线程中进行视图的绘制, �
 
 **什么是离屏渲染, 你怎么理解离屏渲染的.**
 
-标准答案: 当我们设置了某些图层属性, 标记未其在未预合成之前无法直接显示的时候呢, 就会触发离屏渲染. 离屏渲染指的是在GPU在当前屏幕缓冲区以外开辟新的缓冲区进行渲染操作.
+标准答案: 当我们设置了某些图层属性, 标记其在未预合成之前无法直接显示的时候呢, 就会触发离屏渲染. 离屏渲染指的是在GPU在当前屏幕缓冲区以外开辟新的缓冲区进行渲染操作.
 
 
 **何时会触发离屏渲染.**
@@ -556,7 +556,7 @@ block分为三种类型, 全局的block(`__NSConcreateGlobalBlock`), 栈上的bl
 
 ![](images/WX20190508-141327@2x.png)
 
-`__forwarding`存在的意义: 不论在任何内存位置, 都可以通过__forwarding访问同一个__block变量. 如果block没有发生拷贝则访问的是栈上的block变量, 如果发生了拷贝, 则不论是栈上的block还是堆上的block其访问的都是堆上的__block变量, 如图所示.
+`__forwarding`存在的意义: 不论在任何内存位置, 都可以通过__forwarding访问同一个__block变量. 如果block没有发生拷贝则访 问的是栈上的block变量, 如果发生了拷贝, 则不论是栈上的block还是堆上的block其访问的都是堆上的__block变量, 如图所示.
 
 ![](images/WX20190508-141559@2x.png)
 
@@ -815,7 +815,7 @@ CoreFoundation中关于Runloop的类型主要有5个: CFRunloopRef, CFRunloopMod
 
 ![](images/RunLoop_0.png)
 
-一个Runloop包含若干个mode, 每个mode包含若干个Source/Timser/Observer. 一个runloop同时只运行在一个mode下, 如果想要切换mode必须退出, 然后指定另一个Mode重新进入. 这样做的目的主要是为了风格开不同组的`Source/Timer/Observer`, 让他们互不影响.
+一个Runloop包含若干个mode, 每个mode包含若干个Source/Timser/Observer. 一个runloop同时只运行在一个mode下, 如果想要切换mode必须退出, 然后指定另一个Mode重新进入. 这样做的目的主要是为了隔离开不同组的`Source/Timer/Observer`, 让他们互不影响.
 
 **CFRunloopSourceRef**时事件产生的地方. source有两个版本: source0, source1. source0不能主动触发事件, 只会产生一个待处理的标记. source1可以主动触发事件, 它包含一个`mach_port`和一个回掉函数指针, 这种source能够主动唤醒Runloop线程.
 
@@ -998,7 +998,7 @@ App启动后, 苹果在主线程Runloop里注册了两个Observer, 回掉都是`
 
 在主线程执行代码, 通常是写在诸如事件回掉, Timer回掉内的. 这些回掉被Runloop创建好的AutoreleasePool环绕着, 所以不会出现内存泄露, 开发者也不必显式的创建Pool.
 
-**总结: 进入循环时候push自动释放池; 进入休眠的时候pop自动释放池; 退出的时候pop自动释放池; **
+**总结: 进入循环时候push自动释放池; 进入休眠的时候pop+push自动释放池; 退出的时候pop自动释放池; **
 
 ##### 事件响应
 苹果注册一个Source1用来接收系统事件. 当一个硬件事件(触摸,锁屏,摇晃)发生后, 首先IOKit收到后生成一个IOHIDEvent事件进行传递, 随后通过mach port转发给需要的App进程. 随后苹果注册的那个Source1就会触发回掉, 并通过`_UIApplicationHandleEventQueue()`进行应用内部的分发. `_UIApplicationHandleEventQueue()`进一步包装成UIEvent, 在应用内部进行分发. 
