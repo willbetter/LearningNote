@@ -4,7 +4,7 @@
 
 
 
-
+[TOC]
 
 
 
@@ -337,16 +337,273 @@ override func viewDidLoad() {
 
 这使得订阅将一直持续到控制器的dealloc事件产生为止。
 
-
-
-
-
 ## 6.Schedulers-调度器
 
+![](../resourse/images/Scheduler.png)
 
+Schedulers是Rx实现多线程的核心模块，它主要用于控制任务在哪个线程或队列运行。
+
+```
+// 后台取得数据，主线程处理结果
+DispatchQueue.global(qos: .userInitiated).async {
+    let data = try? Data(contentsOf: url)
+    DispatchQueue.main.async {
+        self.data = data
+    }
+}
+
+//如果用 RxSwift 来实现，大致是这样的：
+let rxData: Observable<Data> = ...
+rxData
+    .subscribeOn(ConcurrentDispatchQueueScheduler(qos: .userInitiated))
+    .observeOn(MainScheduler.instance)
+    .subscribe(onNext: { [weak self] data in
+        self?.data = data
+    })
+    .disposed(by: disposeBag)
+```
+
+* **subscribeOn**：决定数据序列的构建函数在哪个Scheduler上运行。如上代码所示，由于获取Data可能花很长时间，因此使用subscribeOb切换到后台的线程上来获取Data。
+* **observeOn**：决定哪个Scheduler监听这个数据序列。如上代码，通过observeOn切换到主线程更新页面。
 
 ## 7.Error Handling-错误处理
 
+我们知道，一旦序列里面产生了error事件，整个序列将被终止。RxSwift有两种错误处理机制：retry、catch。
+
+### retry
+
+retry可以让序列在发生错误后重试，如下diamante，发生错误后将会重试三次：
+
+```swift
+// 请求 JSON 失败时，立即重试，
+// 重试 3 次后仍然失败，就将错误抛出
+
+let rxJson: Observable<JSON> = ...
+
+rxJson
+    .retry(3)
+    .subscribe(onNext: { json in
+        print("取得 JSON 成功: \(json)")
+    }, onError: { error in
+        print("取得 JSON 失败: \(error)")
+    })
+    .disposed(by: disposeBag)
+
+//请求 JSON 失败时，等待 5 秒后重试，
+rxJson
+    .retryWhen { (rxError: Observable<Error>) -> Observable<Int> in
+        return Observable.timer(retryDelay, scheduler: MainScheduler.instance)
+    }
+    .subscribe(...)
+    .disposed(by: disposeBag)
+```
+
+### catch
+
+catchError可以在发生错误的时候，用一个备用元素或者一组备用元素将错误替换掉，如下所示：
+
+```swift
+searchBar.rx.text.orEmpty
+    ...
+    .flatMapLatest { query -> Observable<[Repository]> in
+        ...
+        return searchGitHub(query)
+            .catchErrorJustReturn([])
+    }
+    ...
+    .bind(to: ...)
+    .disposed(by: disposeBag)
+```
+
+### Result
+
+如果我们只是想给用户错误提示，我们可以使用系统自带的枚举Result来表示错误类型，示例代码如下所示：
+
+```
+updateUserInfoButton.rx.tap
+    .withLatestFrom(rxUserInfo)
+    .flatMapLatest { userInfo -> Observable<Result<Void, Error>> in
+        return update(userInfo)
+            .map(Result.success)  // 转换成 Result
+            .catchError { error in Observable.just(Result.failure(error)) }
+    }
+    .observeOn(MainScheduler.instance)
+    .subscribe(onNext: { result in
+        switch result {           // 处理 Result
+        case .success:
+            print("用户信息更新成功")
+        case .failure(let error):
+            print("用户信息更新失败： \(error.localizedDescription)")
+        }
+    })
+    .disposed(by: disposeBag)
+```
+
+这样一来，我们的错误类型被包装成了Result.failure元素，就不会终止整个序列。即使网络请求失败了，整个订阅依然存在。如果用户再次点击更新按钮，还能够再次进行更新操作。
+
+# 如何选择操作符
+
+你可以使用如下的决策树来帮助你找到你需要的操作符。
+
+**我想要创建一个 Observable**
+
+- 产生特定的一个元素：
+
+  just
+
+  - 经过一段延时：[timer](https://beeth0ven.github.io/RxSwift-Chinese-Documentation/content/decision_tree/timer.html)
+
+- 从一个序列拉取元素：[from](https://beeth0ven.github.io/RxSwift-Chinese-Documentation/content/decision_tree/from.html)
+
+- 重复的产生某一个元素：[repeatElement](https://beeth0ven.github.io/RxSwift-Chinese-Documentation/content/decision_tree/repeatElement.html)
+
+- 存在自定义逻辑：[create](https://beeth0ven.github.io/RxSwift-Chinese-Documentation/content/decision_tree/create.html)
+
+- 每次订阅时产生：[deferred](https://beeth0ven.github.io/RxSwift-Chinese-Documentation/content/decision_tree/deferred.html)
+
+- 每隔一段时间，发出一个元素：
+
+  interval
+
+  - 在一段延时后：[timer](https://beeth0ven.github.io/RxSwift-Chinese-Documentation/content/decision_tree/timer.html)
+
+- 一个空序列，只有一个完成事件：[empty](https://beeth0ven.github.io/RxSwift-Chinese-Documentation/content/decision_tree/empty.html)
+
+- 一个任何事件都没有产生的序列：[never](https://beeth0ven.github.io/RxSwift-Chinese-Documentation/content/decision_tree/never.html)
+
+**我想要创建一个 Observable 通过组合其他的 Observables**
+
+- 任意一个 `Observable` 产生了元素，就发出这个元素：[merge](https://beeth0ven.github.io/RxSwift-Chinese-Documentation/content/decision_tree/merge.html)
+- 让这些 `Observables` 一个接一个的发出元素，当上一个 `Observable` 元素发送完毕后，下一个`Observable` 才能开始发出元素：[concat](https://beeth0ven.github.io/RxSwift-Chinese-Documentation/content/decision_tree/concat.html)
+- 组合多个`Observables`的元素
+  - 当每一个 `Observable` 都发出一个新的元素：[zip](https://beeth0ven.github.io/RxSwift-Chinese-Documentation/content/decision_tree/zip.html)
+  - 当任意一个 `Observable` 发出一个新的元素：[combineLatest](https://beeth0ven.github.io/RxSwift-Chinese-Documentation/content/decision_tree/combineLatest.html)
+
+**我想要转换 Observable 的元素后，再将它们发出来**
+
+- 对每个元素直接转换：[map](https://beeth0ven.github.io/RxSwift-Chinese-Documentation/content/decision_tree/map.html)
+- 转换到另一个`Observable`:flatMap
+  - 只接收最新的元素转换的 `Observable` 所产生的元素：[flatMapLatest](https://beeth0ven.github.io/RxSwift-Chinese-Documentation/content/decision_tree/flatMapLatest.html)
+  - 每一个元素转换的 `Observable` 按顺序产生元素：[concatMap](https://beeth0ven.github.io/RxSwift-Chinese-Documentation/content/decision_tree/concatMap.html)
+- 基于所有遍历过的元素： [scan](https://beeth0ven.github.io/RxSwift-Chinese-Documentation/content/decision_tree/scan.html)
+
+**我想要将产生的每一个元素，拖延一段时间后再发出：delay**
+
+**我想要将产生的事件封装成元素发送出来**
+
+- 将他们封装成`Event<Element>`: materialize
+  - 然后解封出来：[dematerialize](https://beeth0ven.github.io/RxSwift-Chinese-Documentation/content/decision_tree/dematerialize.html)
+
+**我想要忽略掉所有的 next 事件，只接收 completed 和 error 事件：ignoreElements**
+
+**我想创建一个新的 Observable 在原有的序列前面加入一些元素：startWith**
+
+**我想从 Observable 中收集元素，缓存这些元素之后在发出：buffer**
+
+**我想将 Observable 拆分成多个 Observables：window**
+
+- 基于元素的共同特征：[groupBy](https://beeth0ven.github.io/RxSwift-Chinese-Documentation/content/decision_tree/groupBy.html)
+
+**我想只接收 Observable 中特定的元素**
+
+- 发出唯一的元素：[single](https://beeth0ven.github.io/RxSwift-Chinese-Documentation/content/decision_tree/single.html)
+
+**我想重新从 Observable 中发出某些元素**
+
+- 通过判定条件过滤出一些元素：[filter](https://beeth0ven.github.io/RxSwift-Chinese-Documentation/content/decision_tree/filter.html)
+
+- 仅仅发出头几个元素：[take](https://beeth0ven.github.io/RxSwift-Chinese-Documentation/content/decision_tree/take.html)
+
+- 仅仅发出尾部的几个元素：[takeLast](https://beeth0ven.github.io/RxSwift-Chinese-Documentation/content/decision_tree/takeLast.html)
+
+- 仅仅发出第 n 个元素：[elementAt](https://beeth0ven.github.io/RxSwift-Chinese-Documentation/content/decision_tree/elementAt.html)
+
+- 跳过头几个元素
+
+  - 跳过头 n 个元素：[skip](https://beeth0ven.github.io/RxSwift-Chinese-Documentation/content/decision_tree/skip.html)
+  - 跳过头几个满足判定的元素：[skipWhile](https://beeth0ven.github.io/RxSwift-Chinese-Documentation/content/decision_tree/skipWhile.html)，[skipWhileWithIndex](https://beeth0ven.github.io/RxSwift-Chinese-Documentation/content/decision_tree/skipWhile.html)
+  - 跳过某段时间内产生的头几个元素：[skip](https://beeth0ven.github.io/RxSwift-Chinese-Documentation/content/decision_tree/skip.html)
+  - 跳过头几个元素直到另一个 `Observable` 发出一个元素：[skipUntil](https://beeth0ven.github.io/RxSwift-Chinese-Documentation/content/decision_tree/skipUntil.html)
+
+- 只取头几个元素
+
+  - 只取头几个满足判定的元素：[takeWhile](https://beeth0ven.github.io/RxSwift-Chinese-Documentation/content/decision_tree/takeWhile.html)，[takeWhileWithIndex](https://beeth0ven.github.io/RxSwift-Chinese-Documentation/content/decision_tree/takeWhile.html)
+  - 只取某段时间内产生的头几个元素：[take](https://beeth0ven.github.io/RxSwift-Chinese-Documentation/content/decision_tree/take.html)
+  - 只取头几个元素直到另一个 `Observable` 发出一个元素：[takeUntil](https://beeth0ven.github.io/RxSwift-Chinese-Documentation/content/decision_tree/takeUntil.html)
+
+- 周期性的对 `Observable` 抽样：[sample](https://beeth0ven.github.io/RxSwift-Chinese-Documentation/content/decision_tree/sample.html)
+
+- 发出那些元素，这些元素产生后的特定的时间内，没有新的元素产生：[debounce](https://beeth0ven.github.io/RxSwift-Chinese-Documentation/content/decision_tree/debounce.html)
+
+- 直到元素的值发生变化，才发出新的元素：
+
+  distinctUntilChanged
+
+  - 并提供元素是否相等的判定函数：[distinctUntilChanged](https://beeth0ven.github.io/RxSwift-Chinese-Documentation/content/decision_tree/distinctUntilChanged.html)
+
+- 在开始发出元素时，延时后进行订阅：[delaySubscription](https://beeth0ven.github.io/RxSwift-Chinese-Documentation/content/decision_tree/delaySubscription.html)
+
+**我想要从一些 Observables 中，只取第一个产生元素的 Observable：amb**
+
+**我想评估 Observable 的全部元素**
+
+- 并且对每个元素应用聚合方法，待所有元素都应用聚合方法后，发出结果：[reduce](https://beeth0ven.github.io/RxSwift-Chinese-Documentation/content/decision_tree/reduce.html)
+- 并且对每个元素应用聚合方法，每次应用聚合方法后，发出结果：[scan](https://beeth0ven.github.io/RxSwift-Chinese-Documentation/content/decision_tree/scan.html)
+
+**我想把 Observable 转换为其他的数据结构：as...**
+
+**我想在某个 Scheduler 应用操作符：subscribeOn**
+
+- 在某个 [Scheduler](https://beeth0ven.github.io/RxSwift-Chinese-Documentation/content/rxswift_core/schedulers.html) 监听：[observeOn](https://beeth0ven.github.io/RxSwift-Chinese-Documentation/content/decision_tree/observeOn.html)
+
+**我想要 Observable 发生某个事件时, 采取某个行动：do**
+
+**我想要 Observable 发出一个 error 事件：error**
+
+- 如果规定时间内没有产生元素：[timeout](https://beeth0ven.github.io/RxSwift-Chinese-Documentation/content/decision_tree/timeout.html)
+
+**我想要 Observable 发生错误时，优雅的恢复**
+
+- 如果规定时间内没有产生元素，就切换到备选 `Observable` ：[timeout](https://beeth0ven.github.io/RxSwift-Chinese-Documentation/content/decision_tree/timeout.html)
+- 如果产生错误，将错误替换成某个元素 ：[catchErrorJustReturn](https://beeth0ven.github.io/RxSwift-Chinese-Documentation/content/decision_tree/catchError.html)
+- 如果产生错误，就切换到备选 `Observable` ：[catchError](https://beeth0ven.github.io/RxSwift-Chinese-Documentation/content/decision_tree/catchError.html)
+- 如果产生错误，就重试 ：[retry](https://beeth0ven.github.io/RxSwift-Chinese-Documentation/content/decision_tree/retry.html)
+
+**我创建一个 Disposable 资源，使它与 Observable 具有相同的寿命：using**
+
+**我创建一个 Observable，直到我通知它可以产生元素后，才能产生元素：publish**
+
+- 并且，就算是在产生元素后订阅，也要发出全部元素：[replay](https://beeth0ven.github.io/RxSwift-Chinese-Documentation/content/decision_tree/replay.html)
+- 并且，一旦所有观察者取消观察，他就被释放掉：[refCount](https://beeth0ven.github.io/RxSwift-Chinese-Documentation/content/decision_tree/refCount.html)
+- 通知它可以产生元素了：[connect](https://beeth0ven.github.io/RxSwift-Chinese-Documentation/content/decision_tree/connect.html)
+
+
+
+
+
+# 常见的应用场景示例代码
+
+### 1.点击按钮获取文本框内容
+
+首先你需要将所有需要用到的文本框都作为Input输入进来，然后通过`combineLatest`操作符将多个输入框组合在一起，然后在按钮的时间流中通过`withLatestFrom`操作符组合起来，这样，当点击按钮的时候，就可以获取到文本框的最新数据。
+
+详细示例代码如下所示：
+
+```
+let requiredInputs = Driver.combineLatest(input.email, input.password)
+let login = input.loginTrigger
+            .withLatestFrom(requiredInputs)
+            .flatMapLatest { [unowned self] (email: String, password: String) in
+                return self.authModel.login(with: email, and: password)
+                    .do(onNext: { [unowned self] user in
+                        if user.isEmailVerified {
+                            self.navigator.toList()
+                        }
+                    })
+                    .trackError(state.error)
+                    .asDriverOnErrorJustComplete()
+        }
+```
 
 
 
@@ -356,24 +613,25 @@ override func viewDidLoad() {
 
 
 
+# 常见操作符
 
+* **combineLatest**：将多个Observable组合起来，Observable中任何一个发出一个元素，这些元素就会通过函数组合起来。
+* **withLatestFrom**：将两个Observable中最新的元素通过一个函数组合起来，然后将组合的结果发送出来。（场景：点击登录获取用户名密码输入框的内容）
 
+* 序列变形相关函数：
+  * **map**：直接对这个元素进行转换变形，然后返回转化后新元素即可。
+  * **flatMap**：将源Observable的每个元素应用一个转换方法，将这些元素合并之后再发出。订阅之前发出的元素也会被重新转换发送。
+  * **flatMapLatest**：将源Observable的每一个元素应用一个转换方法，一旦转换出一个新的Observable，就得将被忽略。发生在订阅之后产生的元素才会被转换和发出。
+* 创建一个Observable：
+  * **just**：创建并发出唯一一个元素，相当于create后，调用onNext+onCompleted。
+  * **create**：创建一个Observable，自定义构建元素序列。
+  * **empty**：创建一个空的Observable，这个Observable只有一个完成事件。
+  * **never**：创建一个Observable，但是这个Observable不会产生任何的事件。
 
-
-
-
-
-
+* **throttle**：在一段时间之内，限制只接收一条数据。适用于输入框搜索限制发送请求。
+* **do**：注册一个操作来**观察观察者的生命周期**。它与subscribe是无关的，调用它并不影响subscribe。
 
 一些存在的疑问：
-
-1.BehaviorRelay是干什么用的？只是占位赋默认值用的吗？
-
-struct Output {
-
-​        let results = BehaviorRelay<([MapStationModel]?)>(value: [])
-
-​    }
 
 2.debounce操作是什么意思？
 

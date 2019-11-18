@@ -131,7 +131,13 @@ Everyone who has used UIKit knows the monotony of creating table views: we need 
 
 *And it’s all gone with SwiftUI.*
 
+用过UIKit的人都知道，创建TableView是非常单调乏味的事情：首先注册cell，然后告诉UIKit列表中有多少个元素，从缓存池中获取cell并进行配置，然后是其它的工作，这些重复的工作是非常乏味的。
+
+而在SwiftUI中，我们不再需要做这些重复的工作。
+
 Tables in SwiftUI use a new `List` view, which can show static or dynamic content. For example, we might have a struct that defines users, like this:
+
+列表在SwiftUI中用`List`来实现，它能够展示静态或者动态的内容。例如，我们可能想要定义一个结构体来定义用户的属性，如下所示：
 
 ```swift
 struct User {
@@ -144,6 +150,10 @@ If we wanted to show that inside rows in a list, we’d start by defining what o
 
 In SwiftUI, it’s this:
 
+我们要想把如上结构体展示到一个列表中，首先我们需要定义列表中的一行是什么样子的。因为每一行都需要展示一个结构体类型User，所以我们需要在View对象中添加一个User属性，由于列表中每一行都需要展示name属性，所以我们需要让我们View的body返回一个展示文本的视图。
+
+如下所示：
+
 ```swift
 struct UserRow: View {
     var user: User
@@ -155,6 +165,8 @@ struct UserRow: View {
 ```
 
 Finally, we can update our `ContentView` struct so that it creates a couple of users then puts them in a list:
+
+最后，我们需要更新`ContentView`结构体以便创建多个用户，然后将用户放置到列表中：
 
 ```swift
 struct ContentView: View {
@@ -176,6 +188,12 @@ To make that happen, we must make `User` conform to the `Identifiable` protocol 
 
 So, we could update `User` to have a `id` property like this:
 
+上面简单的列表示例能够正常跑起来。为了更好的使用列表展示数据，你想要通过一个数组来动态配置列表内容，让SwiftUI自行判断需要多少行，自动创建并且展示。
+
+为了实现这个功能，我们需要让User实现`Identifiable`协议，以便让SwiftUI确定唯一的一个用户。我们可以通过判断每个User中每个属性是否相同来实现这个功能，但是这样效率很低并且容易出错。因此我们需要给我们的User结构体添加一个id属性，以此来保证列表中的User不会发生重复。
+
+我们给User添加一个id属性，如下所示：
+
 ```swift
 struct User: Identifiable {
     var id: Int
@@ -187,6 +205,10 @@ struct User: Identifiable {
 You can use anything you like for your identifier – strings, UUIDs, or whatever, are all fine.
 
 Now that we have that we can create an array of our users – which could just as easily come from some `Codable` input you’ve downloaded from the internet – and pass that into the list as we create it. We then pass a closure to run that configures individual rows in the list, like this:
+
+你可以使用任何你想用的类型来做唯一标记，比如字符串、UUID等等。
+
+现在我们可以创建一个包含多个User对象的数组，你可以随便填写一点内容，然后通过闭包给每一行配置数据，如下所示：
 
 ```swift
 struct ContentView: View {
@@ -208,17 +230,29 @@ Just to be clear: about half that code is just me creating some example data –
 
 In fact, if you’re just showing rows like that, you can collapse it down even further:
 
+声明一点：上面示例大部分代码都是为了创建示例数据用的，真正的SwiftUI代码只有三行，这三行还包含了闭包的必要结构。
+
+实际上，如果你想像上面示例那张展示数据，你只需要写一行SwiftUI代码即可，如下所示：
+
 ```swift
 return List(users, rowContent: UserRow.init)
 ```
 
 **Boom.**
 
+**Duang！**
+
 Seriously, SwiftUI will demolish so much of your code.
 
 Before we’re done with lists, there’s one more thing: we can change `UserRow` freely without worrying about how it’s used elsewhere. Remember, SwiftUI is designed for composability: we pass a user into `UserRow` and let *it* figure out how it’s displayed, rather than always having our main views control everything like we did with UIKit.
 
 So, if we wanted `UserRow` to show two labels stack vertically, with one large and one small, and with both labels aligned to their leading edge, we’d write this:
+
+说实话，SwiftUI将会大量的消减你的UI代码。
+
+在结束这个例子之前，再说一点：我们可以随意的修改UserRow而无需担心它在那里使用到了。SwiftUI一个重要特性就是可组合的，我们把一个User对象传递给UserRow，UserRow会自行决定如何展示数据，我们不需要像UIKit那样使用主视图来控制所有的子视图。
+
+我们要是想让UserRow垂直展示两个Label，其中一个使用大标题，一个使用小标题，并且都靠左对齐，代码如下所示：
 
 ```swift
 struct UserRow: View {
@@ -236,11 +270,19 @@ struct UserRow: View {
 
 Beautiful.
 
+漂亮！
+
 ### Showing a detail screen
 
 Showing just one screen isn’t very interesting, so let’s create another.
 
 First, we’ll say this screen should show just the last name of the user that was selected – nice and big, and in a red color:
+
+### 展示一个详细页
+
+仅仅展示一个页面挺没意思的，再来一个吧。
+
+首先，我们想让这个视图展示列表中选中User的名字，并且用红色字体大标题：
 
 ```swift
 struct DetailView: View {
@@ -255,6 +297,8 @@ struct DetailView: View {
 ```
 
 Next we want to embed the list in `ContentView` inside a navigation view, which is equivalent to a navigation controller in UIKit:
+
+然后我们想把列表嵌入到一个导航View中，相当于是UIKit中的导航控制器：
 
 ```swift
 struct ContentView: View {
@@ -272,6 +316,8 @@ struct ContentView: View {
 
 By default navigation bars don’t have a title, so you should attach a title to your list like this:
 
+默认情况下，导航栏没有标题，所以你需要给导航栏添加一个标题：
+
 ```swift
 List(users, rowContent: UserRow.init)
     .navigationBarTitle("Users")
@@ -282,6 +328,12 @@ Of course, what we *really* want is for tapping items in our cells to show our d
 To make that happen we need to wrap our user rows inside a `NavigationLink`. This gets created with a handful of parameters, but here we’re going to use only two: where to send the user when the item is tapped, and a trailing closure specifying what to put inside the navigation item. In our case, that’s our user row with whatever user is being shown.
 
 So, replace the navigation view with this:
+
+我们真正想要的是点击列表中的一行，然后展示详情页面，不管你点击的是哪一行。
+
+为了实现这个功能，我们需要将我们的UserRow包装到NavigationLink中。NavigationLink的初始化方法需要几个参数，这里我们只填两个参数，一个是点击后要跳转的目标View，另一个是闭包来给每一行添加数据。这个示例中，是给我们的UserRow配置数据。
+
+我们的NavigationView编程了这样：
 
 ```swift
 return NavigationView {
@@ -295,10 +347,12 @@ return NavigationView {
 
 Now two things have happened. First, if you click the small play button at the bottom-right corner of the preview area, you’ll find you can now tap on list rows to show the detail view we made. Second, you might also have noticed that our list rows have disclosure indicators – that’s what Apple meant about SwiftUI being automatic.
 
+现在发生了两件事情。首先，如果你点击右下角预览区域的播放按钮，你会看到现在你可以点击列表中的行然后展开详情页面了；其次你会注意到我们列表行有一个指示器，意思是SwiftUI是自动化的。
+
 ### Where next?
+
+### 接下来怎么做？
 
 Once you've spent some time with SwiftUI it's fair to say that going back to UIKit feels like going back to Objective-C – methods like `viewDidLoad()` that we took for granted now seem just a bit alien, and you start to resent writing boilerplate code that effectively disappears in SwiftUI.
 
-If you'd like to learn much more about SwiftUI, I published a [massive, free SwiftUI tutorial](https://www.hackingwithswift.com/quick-start/swiftui) called SwiftUI By Example, which walks you through a complete project from scratch then dives into well over 100 solutions for common problems you'll face – how do you create text fields? How do you work with Core Data? How do you animate changes? All that and more are covered, and it's online for free.
-
-I’d love to hear your views on SwiftUI – send me a tweet at [@twostraws](https://twitter.com/twostraws) and let me know what you think!
+一旦你习惯了使用SwiftUI，你再使用UIKit就好比是用习惯了Swift再回去用Objective-C，类似于`viewDidLoad()`等保证声明周期的方法看起来就很奇怪了，你可能开始讨厌编写这些模板代码了，因为这些东西在SwiftUI中全部都不见了。
