@@ -589,7 +589,7 @@ updateUserInfoButton.rx.tap
 
 详细示例代码如下所示：
 
-```
+```swift
 let requiredInputs = Driver.combineLatest(input.email, input.password)
 let login = input.loginTrigger
             .withLatestFrom(requiredInputs)
@@ -605,6 +605,128 @@ let login = input.loginTrigger
         }
 ```
 
+### 2.使用RxDataSources绑定TableView
+
+```swift
+//1.首先定义一个Section,Section需要遵守SectionModelType协议
+struct MySection {
+    var header: String
+    var items: [Item]
+}
+extension MySection : AnimatableSectionModelType {
+    typealias Item = Int
+    var identity: String {
+        return header
+    }
+    init(original: MySection, items: [Item]) {
+        self = original
+        self.items = items
+    }
+}
+//2.定义一个dataSource,再里面配置tableViewCell相关信息.其泛型类型是MySection.
+let dataSource = RxTableViewSectionedAnimatedDataSource<MySection>(
+    configureCell: { ds, tv, _, item in
+        let cell = tv.dequeueReusableCell(withIdentifier: "Cell") ?? UITableViewCell(style: .default, reuseIdentifier: "Cell")
+        cell.textLabel?.text = "Item \(item)"
+        return cell
+    },
+    titleForHeaderInSection: { ds, index in
+        return ds.sectionModels[index].header
+    }
+)
+//3.定义包含两个section的数组,用于描述数据模型
+let sections = [
+    MySection(header: "First section", items: [ 1, 2]),
+    MySection(header: "Second section", items: [ 3, 4 ]) ]
+//4.创建一个观察者并section数组发出去.
+Observable.just(sections)
+    .bind(to: tableView.rx.items(dataSource: dataSource))
+    .disposed(by: disposeBag)
+//5.如果你喜欢,可以使用rx方式配置tableView的代理.
+tableView.rx.setDelegate(self)
+    .disposed(by: disposeBag)
+```
+
+### 3.RxSwift对接MJRefresh
+
+MJRefresh在RxSwift中也很简单。我们可以将MJRefresh的刷新状态封装成可被观察的对象，然后通过观察这个状态来进行刷新，刷新完成后，通过绑定来结束刷新状态，具体的代码如下所示：
+
+```swift
+//MARK: - MJRefresh + RxSwift
+// RxTarget类并不是公开API 我们自己实现一下就好了
+class Target: NSObject, Disposable {
+    private var retainSelf: Target?
+    override init() {
+        super.init()
+        self.retainSelf = self
+    }
+    func dispose() {
+        self.retainSelf = nil
+    }
+}
+
+// 自定义target，用来接收MJRefresh的刷新事件
+private final
+class MJRefreshTarget<Component: MJRefreshComponent>: Target {
+    weak var component: Component?
+    let refreshingBlock: MJRefreshComponentRefreshingBlock
+    
+    init(_ component: Component , refreshingBlock: @escaping MJRefreshComponentRefreshingBlock) {
+        self.refreshingBlock = refreshingBlock
+        self.component = component
+        super.init()
+        component.setRefreshingTarget(self, refreshingAction: #selector(onRefeshing))
+    }
+    
+    @objc func onRefeshing() {
+        refreshingBlock()
+    }
+    
+    override func dispose() {
+        super.dispose()
+        self.component?.refreshingBlock = nil
+    }
+}
+
+extension Reactive where Base: MJRefreshComponent {
+
+    var refreshState: ControlProperty<MJRefreshState> {
+        let source: Observable<MJRefreshState> = Observable.create { [weak component = self.base] observer  in
+            MainScheduler.ensureExecutingOnScheduler()
+            guard let component = component else {
+                observer.on(.completed)
+                return Disposables.create()
+            }
+
+            // 发出初始值MJRefreshStateIdle
+            observer.on(.next(component.state))
+
+            let observer = MJRefreshTarget(component) {
+                //  在用户下拉时 发出MJRefreshComponent 的状态
+                observer.on(.next(component.state))
+            }
+            return observer
+            }.takeUntil(deallocated)
+        
+        // 在setter里设置MJRefreshComponent 的状态
+        // 当一个Observable<MJRefreshState>发出，假如这个state是MJRefreshStateIdle，那么MJRefreshComponent 就会结束刷新
+        let bindingObserver = Binder<MJRefreshState>(self.base) { (component, state) in
+            component.state = state
+        }
+        return ControlProperty(values: source, valueSink: bindingObserver)
+    }
+}
+
+
+//使用方法
+tableView.mj_header.rx.refreshState
+    .filter { $0 == .refreshing }
+    .map { _ in MJRefreshState.idle }
+    .delay(4, scheduler: MainScheduler.instance)
+    .bind(to: tableView.mj_header.rx.refreshState)
+    .disposed(by: disposeBag)
+```
+
 
 
 
@@ -617,19 +739,22 @@ let login = input.loginTrigger
 
 * **combineLatest**：将多个Observable组合起来，Observable中任何一个发出一个元素，这些元素就会通过函数组合起来。
 * **withLatestFrom**：将两个Observable中最新的元素通过一个函数组合起来，然后将组合的结果发送出来。（场景：点击登录获取用户名密码输入框的内容）
-
 * 序列变形相关函数：
   * **map**：直接对这个元素进行转换变形，然后返回转化后新元素即可。
   * **flatMap**：将源Observable的每个元素应用一个转换方法，将这些元素合并之后再发出。订阅之前发出的元素也会被重新转换发送。
-  * **flatMapLatest**：将源Observable的每一个元素应用一个转换方法，一旦转换出一个新的Observable，就得将被忽略。发生在订阅之后产生的元素才会被转换和发出。
+  * **flatMapLatest**：将源Observable的每一个元素应用一个转换方法，一旦转换出一个新的Observable，旧的未完成的元素将被忽略。发生在订阅之后产生的元素才会被转换和发出。
 * 创建一个Observable：
+  * **merge**：将多个Observable合并成一个，当某个发出元素时候，它就将这个元素发出来。
+  * **concat**：将多个Observable按顺序串联起来，当前一个Observable元素发送完毕后，后一个Observable才开始发出元素。concat等待前一个Observable产生完成事件后，才对Observable进行订阅。
   * **just**：创建并发出唯一一个元素，相当于create后，调用onNext+onCompleted。
   * **create**：创建一个Observable，自定义构建元素序列。
   * **empty**：创建一个空的Observable，这个Observable只有一个完成事件。
   * **never**：创建一个Observable，但是这个Observable不会产生任何的事件。
-
 * **throttle**：在一段时间之内，限制只接收一条数据。适用于输入框搜索限制发送请求。
+* **debounce**：过滤掉高频产生的元素，在一段时间之内只发出一个元素。
 * **do**：注册一个操作来**观察观察者的生命周期**。它与subscribe是无关的，调用它并不影响subscribe。
+* **delay**：将产生的每一个元素拖延一段时间后再发出。
+* **delaySubscription**：操作符将在经过所设定的时间时候才对Observable进行订阅操作。
 
 一些存在的疑问：
 
@@ -646,3 +771,4 @@ let login = input.loginTrigger
 # Tips
 
 1. [Hot and cold Observables](https://github.com/ReactiveX/RxSwift/blob/master/Documentation/HotAndColdObservables.md)
+2. 不同类型的Observable的转换必须返回对应的类型才行，否则是会报错的！(Driver.just("").flatMapLatest {Observable.just(\$0)}这种写法是会报错的，如果想要得到Observable类型，必须这么写：Driver.just("").asObservable().flatMapLatest {Observable.just(\$0)})
